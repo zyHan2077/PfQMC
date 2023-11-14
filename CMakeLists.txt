@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 PROJECT(MQMC)
 
 include_directories(
-${PROJECT_SOURCE_DIR}/include
+${PROJECT_SOURCE_DIR}/src
 )
 
 find_package(MKL CONFIG REQUIRED)
