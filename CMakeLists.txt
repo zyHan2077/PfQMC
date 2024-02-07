@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 PROJECT(MQMC)
 
 include_directories(
-${PROJECT_SOURCE_DIR}/src /opt/Eigen/eigen-3.4.0
+${PROJECT_SOURCE_DIR}/inc /opt/Eigen/eigen-3.4.0
 )
 
 set(SRC_LIST src/skewMatUtils.cpp)
@@ -24,14 +24,13 @@ set(CMAKE_C_LINK)
 set(FP_MODEL_FLAGS "-fp-model=precise -fimf-arch-consistency=true -no-fma")
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${FP_MODEL_FLAGS}")
 
-add_executable(main ./main.cpp ${SRC_LIST})
-add_executable(main_test ./main_test.cpp ${SRC_LIST})
-
-target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
-target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
+# add_executable(main ./main.cpp ${SRC_LIST})
+# target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+# target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+# target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
 
 # target_link_libraries(main_test GTest::gtest_main)
+add_executable(main_test ./main_test.cpp ${SRC_LIST})
 target_compile_options(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(main_test PUBLIC $<LINK_ONLY:MKL::MKL> GTest::gtest_main)

@@ -1,50 +1,9 @@
-// Tempt to write skew matrix utilities, as
-// what MKL has done for symmetric matrix
-// not used yet
+// no optimizations based on 
+// skew-matrix properties has been 
+// implemented. Operations are based
+// entirely on MKL/BLAS dense matrix utilities
 
 #include"skewMatUtils.h"
-
-//  L*L skew matrix A,
-//  y = A.x
-//  only the upper or the lower triangle of A is used,
-// terms are reorganized such that each independent 
-// element is used only once
-void SkewMatMulVec(char uplo, uint L, const dtype* A, const uint lda, const char transx, const dtype *x, dtype *y) {
-    
-    dtype temp;
-    // clear y
-    for (uint i=0; i<L; i++) y[i] = zero;
-
-    uint aind = 0;
-    if (uplo == 'U' ) {
-
-        if(transx == 'N') {
-            for (uint i=0; i<L; i++) {
-                temp = zero;
-                for (uint j=i+1; j<L; j++) {
-                    y[j] -= A[aind+j] * x[i];
-                    temp += A[aind+j] * x[j];
-                }
-                aind += lda;
-                y[i] += temp;
-            }
-        } else if (transx == 'C') {
-            for (uint i=0; i<L; i++) {
-                temp = zero;
-                for (uint j=i+1; j<L; j++) {
-                    y[j] -= A[aind+j] * std::conj(x[i]);
-                    temp += A[aind+j] * std::conj(x[j]);
-                }
-                aind += lda;
-                y[i] += temp;
-            }
-        } else {
-            printf("error!\n");    
-        }
-    } else {
-        printf("not implemented ...\n");
-    }
-}
 
 // after the Householder transformation
 // A is brought into tri-diagonalized form
@@ -73,7 +32,7 @@ void SkewMatMulVec(char uplo, uint L, const dtype* A, const uint lda, const char
 void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf) {
     
     const MKL_INT L = 2*N;
-    const MKL_INT inc=1;
+    const MKL_INT inc = 1;
     dtype* temp2 = &temp[L];
     const dtype two = 2;
     const char mklNoTrans = 'N';
@@ -134,46 +93,18 @@ void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf)
     *pfaf = pfaffian * A[ind(L-1, L-2, L)];
 }
 
-void printMat(uint N, dtype* A) {
-    std::cout << "===skew mat===\n";
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            std::cout << A[ind(j, i, N)] << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "===end===\n";
+// Wrapper function for pfaffian calculation
+// A is 2N*2N matrix, temp is a 4N vector
+dtype pfaf(const int N, cMat& A, cVec& temp) {
+    dtype r;
+    SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), &r);
+    return r;
 }
-
-// template <typename T>
-// void printVec(uint L, T* x) {
-//     std::cout << "===vec===\n";
-//     for (int i = 0; i < L; i++) {
-//         std::cout << x[i] << "\n";
-//     }
-//     std::cout << "\n===end===\n";
-// }
-
 
 
 // x^\dagger . x
 void complexNorm2(const dtype* x, MKL_INT len, dtype* res) {
     MKL_INT inc = 1;
     zdotc(res, &len, x, &inc, x, &inc);
-    // (*res) = sqrt(res->real());
 }
 
-dtype matDet(uint L, dtype* mat, lapack_int* temp) {
-    int info = LAPACKE_zgetrf(LAPACK_COL_MAJOR, L, L, mat, L, temp);
-    printMat(L, mat);
-    if (info == 0) {
-        dtype r = 1;
-        for (int i=0; i<L; i++) {
-            r *= mat[i*L + i];
-        }
-        return r;
-    } else {
-        std::cout << "\n===error===\n";
-        return 0;
-    }
-}

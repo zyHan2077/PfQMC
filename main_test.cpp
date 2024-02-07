@@ -1,102 +1,82 @@
 #include <gtest/gtest.h>
-#include "src/skewMatUtils.h"
+#include <ctime>
+#include "inc/skewMatUtils.h"
 
+#define MPRINTF(...) {printf("[   INFO   ] "); printf(__VA_ARGS__); }
 
-TEST(PfafTest, ResultError) {
-    int N = 5;
+TEST(PfafTest, SimpleIntegerMatrix)
+{
+    int L = 20;
+    long long result[] = { -1, 8, -144, 4512, -218912, 
+        15247232, -1444779392, 178933241088,
+        -28079775960320, 5447517439766528 };
 
-    dtype *A, *temp1;
-    // dtype *temp2;
-    A = (dtype *) mkl_malloc((4*N*N)*sizeof(dtype), 64);
-    temp1 = (dtype *) mkl_malloc((4*N)*sizeof(dtype), 64);
-    // temp2 = (dtype *) mkl_malloc((2*N)*sizeof(dtype), 64);
+    cMat A(L, L);
+    cVec temp(2 * L);
 
     // initialize
     int count = 1;
-    for(int i=0; i<2*N; i++) {
-        for (int j=i+1; j<2*N; j++) {
-            A[i*2*N + j] = dtype{(double)count, -0.0};
-            A[j*2*N + i] = dtype{-(double)count, 0.0};
+    for (int j = 1; j < L; j++)
+    {
+        for (int i = 0; i < j; i++)
+        {
+            A(j, i) = dtype{(double)count, -0.0};
+            A(i, j) = dtype{-(double)count, 0.0};
             count++;
         }
-        // temp1[i] = count;
     }
 
-    // printMat(2*N, A);
-
-    dtype pfaf;
-    SkewMatHouseholder_PureMKL(N, A, temp1, &pfaf);
-    
-    // printMat(2*N, A);
-
-    // std::cout << "pfaffian= " << (pfaf) << "\n";
-
-    EXPECT_NEAR(pfaf.real(), -2359296, 1e-5) << "failed with error 1111 " << (pfaf+2359296.0);
-
-    MKL_free(A);MKL_free(temp1);
-    // MKL_free(temp2);
+    for (int l = 2; l <= L; l += 2) {
+        cMat Ablock = A(Eigen::seq(0, l-1), Eigen::seq(0, l-1));
+        dtype pf = pfaf(l/2, Ablock, temp);
+        double pf0 = result[(l/2)-1];
+        EXPECT_NEAR((pf.real() - pf0) / pf0, 0.0, 1e-10) << "failed with l = " << l << "and pf = " << pf << "\n";    
+    }
 }
 
-TEST(PfafTest, RandomEntries) {
-    int N = 10;
-    int sizemat = 4*N*N;
-    int tempind;
-    dtype tempz;
-    VSLStreamStatePtr stream;
-    double *x1, *x2;
+TEST(PfafTest, RandomEntries)
+{
+    // mkl_set_num_threads(8);
+    int N = 100;
+    int Nrounds = 200;
+    int L = 2 * N;
+    srand(114514);
+    cVec temp(4*N);
+    dtype pf, det, pf2; 
+    std::vector<cMat> matList;
+    std::vector<dtype> detList;
+    std::vector<dtype> pfList;
 
-    x1 = (double *) mkl_malloc(sizemat*sizeof(double), 64);
-    x2 = (double *) mkl_malloc(sizemat*sizeof(double), 64);
+    clock_t t1, t2;
 
-    vslNewStream(&stream, VSL_BRNG_MCG59,  114514);
-    vdRngUniform(VSL_RNG_METHOD_UNIFORM_STD, stream, sizemat, x1, -1, 1);
-    vdRngUniform(VSL_RNG_METHOD_UNIFORM_STD, stream, sizemat, x2, -1, 1);
-
-    // printVec(sizemat, x1);
-    // printVec(sizemat, x2);
-    
-
-    dtype *A, *temp1;
-    // dtype *temp2;
-    A = (dtype *) mkl_malloc((4*N*N)*sizeof(dtype), 64);
-    temp1 = (dtype *) mkl_malloc((4*N)*sizeof(dtype), 64);
-    // temp2 = (dtype *) mkl_malloc((2*N)*sizeof(dtype), 64);
-
-    // initialize
-    // int count = 1;
-    for(int i=0; i<2*N; i++) {
-        for (int j=i+1; j<2*N; j++) {
-            tempind = i*2*N + j;
-            tempz = x1[tempind] + (im*x2[tempind]);
-            A[tempind] = tempz;
-            A[j*2*N + i] = - tempz;
-            // count++;
-        }
-        A[i*2*N + i] = 0;
-        // temp1[i] = count;
+    for (int rounds = 0; rounds < Nrounds; rounds++) {
+        cMat A = cMat::Random(L, L);
+        A = A - A.transpose().eval();
+        matList.push_back(A);
     }
 
-    printMat(2*N, A);
+    t1 = clock();
+    for(auto A: matList) {
+        detList.push_back(A.determinant());
+    }
+    t1 = clock() - t1;
 
-    Eigen::MatrixXcd Acopy(2*N, 2*N);
-    memcpy(Acopy.data(), A, (4*N*N)*sizeof(dtype));
-    std::cout << Acopy << std::endl;
+    t2 = clock();
+    for (auto A: matList) {
+        pfList.push_back( pfaf(N, A, temp) );
+    }
+    t2 = clock() - t2;
 
-    dtype pfaf;
-    SkewMatHouseholder_PureMKL(N, A, temp1, &pfaf);
+    for (int rounds = 0; rounds < 100; rounds++) {
+        pf = pfList.at(rounds);
+        det = detList.at(rounds);
+        pf2 = pf * pf;
+        double r = std::abs(pf2 - det) / std::abs(det);
+        // std::cout << pf2 << " " << det << " " << r << "\n";
+        EXPECT_NEAR( r, 0.0, 1e-10);
+    }
 
-    std::cout << "pfaf complete! = " << pfaf << std::endl;
-    dtype det;
-    // lapack_int ipiv[2*N];
-    det = Acopy.determinant();
-    
-    // printMat(2*N, A);
-
-    std::cout << "det= " << (det) << "\n";
-
-    pfaf = pfaf*pfaf;
-
-    EXPECT_NEAR(pfaf.real(), det.real(), 1e-5) << "failed with pfaf= " << (pfaf);
-
-    MKL_free(A);MKL_free(temp1);MKL_free(x1);MKL_free(x2);
+    MPRINTF("complete %d tests with matrix size %d, pfaffian %ld clicks, det %ld clicks\n",
+        Nrounds, L, t2, t1);
+    MPRINTF("Do not take this result seriously if you are multi-threading\n");
 }

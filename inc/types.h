@@ -19,6 +19,8 @@ typedef std::complex<double> dtype;
 const dtype zero{0.0, 0.0};
 const dtype one{1.0, 0.0};
 const dtype im{0.0, 1.0};
+typedef Eigen::MatrixXcd cMat;
+typedef Eigen::VectorXcd cVec;
 #define ind(i, j, N) (((i)*N) + j)
 const double thresholdDBL = 1.0e-300;
 
