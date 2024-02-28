@@ -6,6 +6,8 @@ include_directories(
 ${PROJECT_SOURCE_DIR}/inc /opt/Eigen/eigen-3.4.0
 )
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(SRC_LIST src/skewMatUtils.cpp)
 
 set(MKL_INTERFACE lp64)

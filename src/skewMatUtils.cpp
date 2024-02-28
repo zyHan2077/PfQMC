@@ -29,22 +29,23 @@
 //
 // A should be a 2N * 2N matrix
 // while size of temp be at least 4*N
-void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf) {
+void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataType* kVec) {
     
     const MKL_INT L = 2*N;
     const MKL_INT inc = 1;
-    dtype* temp2 = &temp[L];
-    const dtype two = 2;
+    DataType* temp2 = &temp[L];
+    // const DataType two = 2;
     const char mklNoTrans = 'N';
-    dtype norm2, arg0, k, alpha;
-    dtype *x, *B, *subA;
+    DataType norm2, arg0, k, alpha;
+    DataType *x, *B, *subA;
     double normx0, sqrtnorm2, normu;
-    dtype pfaffian = 1;
+    // DataType pfaffian = 1;
+    int kcount = 0;
 
     for(uint i = 0; i<L-2; i++) {
-        x = &(A[ind(i, i+1, L)]);
+        x = &(A[ind(i+1, i, L)]);
         MKL_INT len = L - i - 1;
-        // zcopy(&len, &(A[ind(i, i+1, L)]), &inc, x, &inc);
+        // zcopy(&len, &(A[ind(i+1, i, L)]), &inc, x, &inc);
         complexNorm2(x, len, &norm2);
         sqrtnorm2 = sqrt(norm2.real());
         // printVec(len, x);
@@ -52,8 +53,10 @@ void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf)
 
         // in the case norm2 = 0, pfaffian is just 0
         if (norm2.real() < thresholdDBL) {
-            pfaffian = 0;
-            std::cout << "pfaffian zero\n";
+            // pfaffian = 0;
+            kVec[kcount] = 0;
+            // std::cout << "pfaffian zero\n";
+            return;
         } else {
             normx0 = std::norm(x[0]);
             arg0 = 1;
@@ -63,7 +66,7 @@ void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf)
 
             k = arg0 * sqrtnorm2;
             x[0] += k;
-            A[ind(i+1, i, L)] = -k;
+            A[ind(i, i+1, L)] = k;
 
             normu = norm2.real() - normx0 + std::norm(x[0]);
             // std::cout << "normu=" << normu << "\n";
@@ -84,26 +87,37 @@ void SkewMatHouseholder_PureMKL(const int N, dtype* A, dtype* temp, dtype* pfaf)
             
             // (2/|u|^2)^2 u . (u^\dagger . temp) . u^T \equiv 0
             // if(i%2 == 0) 
-            pfaffian *=  double(i%2) + double(1-i%2) * k;
+            // pfaffian *=  double(i%2) + double(1-i%2) * k;
 
             // printMat(L, A);
         }
+
+        if (i%2 == 0) {
+            kVec[kcount] = k;
+            kcount++;
+        }
         // std::cout << "=========================loop end \n";
     }
-    *pfaf = pfaffian * A[ind(L-1, L-2, L)];
+    kVec[kcount] = A[ind(L-2, L-1, L)];
+    // *pfaf = pfaffian * A[ind(L-2, L-1, L)];
 }
 
 // Wrapper function for pfaffian calculation
 // A is 2N*2N matrix, temp is a 4N vector
-dtype pfaf(const int N, cMat& A, cVec& temp) {
-    dtype r;
-    SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), &r);
+DataType pfaf(const int N, MatType& A, VecType& temp) {
+    DataType r = 1;
+    VecType kVec(N);
+    kVec.setZero();
+    SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), kVec.data());
+    for(int i=0; i<N; i++) {
+        r *= kVec[i];
+    }
     return r;
 }
 
 
 // x^\dagger . x
-void complexNorm2(const dtype* x, MKL_INT len, dtype* res) {
+void complexNorm2(const DataType* x, MKL_INT len, DataType* res) {
     MKL_INT inc = 1;
     zdotc(res, &len, x, &inc, x, &inc);
 }

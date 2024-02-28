@@ -15,13 +15,25 @@
 #include "mkl_vsl.h"
 #include <Eigen/Dense>
 
-typedef std::complex<double> dtype;
-const dtype zero{0.0, 0.0};
-const dtype one{1.0, 0.0};
-const dtype im{0.0, 1.0};
-typedef Eigen::MatrixXcd cMat;
-typedef Eigen::VectorXcd cVec;
-#define ind(i, j, N) (((i)*N) + j)
+typedef std::complex<double> DataType;
+using namespace std::complex_literals;
+const DataType zero{0.0, 0.0};
+const DataType one{1.0, 0.0};
+// const DataType im{0.0, 1.0};
+typedef Eigen::MatrixXcd MatType;
+typedef Eigen::VectorXcd VecType;
+#define ind(i, j, N) (((j)*N) + i)
 const double thresholdDBL = 1.0e-300;
+
+// template <typename T>
+// struct types;
+
+// template <>
+// struct types<double>
+// {
+// 	using MatrixType = Eigen::MatrixXd;
+// 	using DataType = double;
+// 	using VectorType = Eigen::VectorXd;
+// };
 
 #endif

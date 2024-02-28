@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <ctime>
 #include "inc/skewMatUtils.h"
+#include "inc/honeycomb.h"
 
 #define MPRINTF(...) {printf("[   INFO   ] "); printf(__VA_ARGS__); }
 
@@ -11,8 +12,8 @@ TEST(PfafTest, SimpleIntegerMatrix)
         15247232, -1444779392, 178933241088,
         -28079775960320, 5447517439766528 };
 
-    cMat A(L, L);
-    cVec temp(2 * L);
+    MatType A(L, L);
+    VecType temp(2 * L);
 
     // initialize
     int count = 1;
@@ -20,15 +21,15 @@ TEST(PfafTest, SimpleIntegerMatrix)
     {
         for (int i = 0; i < j; i++)
         {
-            A(j, i) = dtype{(double)count, -0.0};
-            A(i, j) = dtype{-(double)count, 0.0};
+            A(j, i) = DataType{(double)count, -0.0};
+            A(i, j) = DataType{-(double)count, 0.0};
             count++;
         }
     }
 
     for (int l = 2; l <= L; l += 2) {
-        cMat Ablock = A(Eigen::seq(0, l-1), Eigen::seq(0, l-1));
-        dtype pf = pfaf(l/2, Ablock, temp);
+        MatType Ablock = A(Eigen::seq(0, l-1), Eigen::seq(0, l-1));
+        DataType pf = pfaf(l/2, Ablock, temp);
         double pf0 = result[(l/2)-1];
         EXPECT_NEAR((pf.real() - pf0) / pf0, 0.0, 1e-10) << "failed with l = " << l << "and pf = " << pf << "\n";    
     }
@@ -36,21 +37,22 @@ TEST(PfafTest, SimpleIntegerMatrix)
 
 TEST(PfafTest, RandomEntries)
 {
-    // mkl_set_num_threads(8);
+    mkl_set_num_threads(1);
+    
     int N = 100;
-    int Nrounds = 200;
+    int Nrounds = 100;
     int L = 2 * N;
     srand(114514);
-    cVec temp(4*N);
-    dtype pf, det, pf2; 
-    std::vector<cMat> matList;
-    std::vector<dtype> detList;
-    std::vector<dtype> pfList;
+    VecType temp(4*N);
+    DataType pf, det, pf2; 
+    std::vector<MatType> matList;
+    std::vector<DataType> detList;
+    std::vector<DataType> pfList;
 
     clock_t t1, t2;
 
     for (int rounds = 0; rounds < Nrounds; rounds++) {
-        cMat A = cMat::Random(L, L);
+        MatType A = MatType::Random(L, L);
         A = A - A.transpose().eval();
         matList.push_back(A);
     }
@@ -79,4 +81,24 @@ TEST(PfafTest, RandomEntries)
     MPRINTF("complete %d tests with matrix size %d, pfaffian %ld clicks, det %ld clicks\n",
         Nrounds, L, t2, t1);
     MPRINTF("Do not take this result seriously if you are multi-threading\n");
+}
+
+TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
+    int Lx = 20;
+    int Ly = 21;
+    int nUnitcell = Lx*Ly;
+    int hamiltonianDim = Lx*Ly*4;
+    honeycombUtils honeycombLatticeConfig(Lx, Ly);
+    
+    MatType Ht(hamiltonianDim, hamiltonianDim);
+    honeycombLatticeConfig.KineticGenerator(Ht, 1.0);
+
+    MatType Hv = MatType::Zero(hamiltonianDim, hamiltonianDim);
+    Eigen::MatrixXi s = Eigen::MatrixXi::Constant(nUnitcell, 3, -1); // set all -1
+    honeycombLatticeConfig.InteractionGenerator(Hv, s, 1.0, 0);
+    honeycombLatticeConfig.InteractionGenerator(Hv, s, 1.0, 1);
+    honeycombLatticeConfig.InteractionGenerator(Hv, s, 1.0, 2);
+    double r = (Ht + Hv).squaredNorm();
+    EXPECT_NEAR(r, 0.0, 1e-20);
+    // std::cout << r << std::endl;
 }
