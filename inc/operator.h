@@ -62,21 +62,91 @@ public:
     }
 };
 
-class SpinlessV_honeycombOperator : public Operator
+class SpinlesstvHoneycombUtils;
+
+class SpinlessVOperator : public Operator
 {
 private:
+    const SpinlesstvHoneycombUtils* config;
+    const int bondType;
+    const double etaM;
+    std::uniform_real_distribution<double> uniform01;
     // delayed update for spinless t-V requires additional diagonalization
     // const int delay_max = 32; 
     // cannot be larger than 64 (unless you change the threads value in kernel_linalg.cpp)
 public:
-    int Nunitcell;
-    int Naux; // number of auxillary fields (live on bonds)
-    int Ndim; // dimension of hamiltonian, number of sites × 2 (number of majorana species)
-    Eigen::MatrixXi *auxFields; // aux fields, 3 × Nunitcell, with value  +1 or -1
-    MatType ham;
-    MatType ham_inv;
+    const int nUnitcell;
+    // const int Naux; // number of auxillary fields (live on bonds)
+    const int nDim; // dimension of hamiltonian, number of sites × 2 (number of majorana species)
+    iVecType* s;
+    MatType B;
+    MatType B_inv;
 
-    SpinlessV_honeycombOperator(double V, )
+    // _s: aux fields, Z_2 variable, length = nUnitcell
+    SpinlessVOperator(SpinlesstvHoneycombUtils* _config, iVecType* _s, int _bondType)
+        :config(_config), bondType(_bondType), etaM(_config->etaM), 
+            nDim(config->nsites * 2), nUnitcell(config->nUnitcell) {
+        s = _s;
+        uniform01 = std::uniform_real_distribution<double>(0.0, 1.0);
+
+        B = MatType::Identity(nDim, nDim);
+        config->InteractionBGenerator(B, *s, bondType);
+    }
+
+    void reCalc() {
+        B = MatType::Identity(nDim, nDim);
+        config->InteractionBGenerator(B, *s, bondType);
+    }
 
 
-}
+    bool singleFlip(MatType &g, int idxCell, double rand) {
+        DataType r = etaM;
+        auto m = config->idxCell2Coord(idxCell);
+        int auxCur = (*s)(idxCell);
+        int idx1, idx2;
+        DataType tmp[2];
+        const int inc =  1;
+        DataType alpha;
+        
+
+        for (int imaj = 0; imaj < 2; imaj ++) {
+            idx1 = config->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
+            idx2 = config->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
+            // tmp = [1 + i \sigma_{12} \tanh(\lambda / 2) G_{12}]
+            tmp[imaj] = ( 1.0 + ( (1.0i) * (config->thHalflV) * double(auxCur) * g(idx1, idx2) ) );
+            r *= tmp[imaj];
+        }
+
+        bool flag = rand < std::abs(r);
+
+        if (flag) {
+            for (int imaj = 0; imaj < 2; imaj ++) {
+                idx1 = config->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
+                idx2 = config->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
+
+                // update aux field and B matrix
+                (*s)(idxCell) = -auxCur;
+                B(idx1, idx2) = -B(idx1, idx2);
+                B(idx2, idx1) = -B(idx2, idx1);
+
+                // update Green's function
+                cVecType x1 = B.col(idx1);
+                cVecType x2 = B.col(idx2);
+                alpha = (-1.0i) * (config->thHalflV) / tmp[imaj];
+                zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc, B.data(), &nDim);
+                alpha = -alpha;
+                zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc, B.data(), &nDim);
+            }
+        }
+
+        return flag;
+    }
+
+    void update(MatType &g) {
+        for (int i=0; i<nUnitcell; i++) {
+            // random real between (0, 1)
+            double rand = uniform01(config->rdEng);
+            bool flag = singleFlip(g, i, rand);
+        }
+    }
+};

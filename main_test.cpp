@@ -88,7 +88,7 @@ TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
     int Ly = 21;
     int nUnitcell = Lx*Ly;
     int hamiltonianDim = Lx*Ly*4;
-    honeycombUtils honeycombLatticeConfig(Lx, Ly);
+    HoneycombUtils honeycombLatticeConfig(Lx, Ly);
     
     MatType Ht(hamiltonianDim, hamiltonianDim);
     honeycombLatticeConfig.KineticGenerator(Ht, 1.0);

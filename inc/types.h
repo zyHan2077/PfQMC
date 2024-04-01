@@ -5,8 +5,8 @@
 #define EIGEN_USE_MKL_ALL
 #endif
 
-#include<complex>
 #include<float.h>
+#include<complex>
 
 #define MKL_Complex16 std::complex<double>
 
@@ -21,7 +21,8 @@ const DataType zero{0.0, 0.0};
 const DataType one{1.0, 0.0};
 // const DataType im{0.0, 1.0};
 typedef Eigen::MatrixXcd MatType;
-typedef Eigen::VectorXcd VecType;
+typedef Eigen::VectorXcd cVecType;
+typedef Eigen::VectorXi iVecType;
 #define ind(i, j, N) (((j)*N) + i)
 const double thresholdDBL = 1.0e-300;
 
