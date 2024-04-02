@@ -11,7 +11,7 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
 
 DataType matDet(uint L, DataType* mat, lapack_int* temp);
 
-DataType pfaf(const int N, MatType& A, VecType& temp);
+DataType pfaf(const int N, MatType& A, cVecType& temp);
 
 inline MatType expm(MatType &H, double lambda)
 {
@@ -22,7 +22,7 @@ inline MatType expm(MatType &H, double lambda)
     MatType expK(N, N);
     D = D.array() * lambda;
     D = D.array().exp();
-    expK.noalias() = V * D.asDiagonal() * V.transpose();
+    expK.noalias() = V * D.asDiagonal() * V.adjoint();
     return expK;
 }
 

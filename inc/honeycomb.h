@@ -1,21 +1,23 @@
+#ifndef Honeycomb_H
+#define Honeycomb_H
+
 #include "types.h"
 #include "operator.h"
 #include "skewMatUtils.h"
-#include <random>
 
 // a honeycomb lattice is defined by 
 // - Lx * Ly unit cells
 // - 2 sites per unit cell
 // - 3 bonds per unit cell
 // - 2 majorana species
-class SpinlesstvHoneycombUtils
+class SpinlessTvHoneycombUtils
 {
 public:
     struct majoranaCoord
     {
-        int ix, iy, isubcell, imaj;
-        majoranaCoord(int _ix=0, int _iy=0, int _isubcell=0, int _imaj=0)
-            : ix(_ix), iy(_iy), isubcell(_isubcell), imaj(_imaj) {};
+        int ix, iy, iSubcell, imaj;
+        majoranaCoord(int _ix=0, int _iy=0, int _iSubcell=0, int _imaj=0)
+            : ix(_ix), iy(_iy), iSubcell(_iSubcell), imaj(_imaj) {};
     };
     
     int Lx, Ly;
@@ -24,13 +26,10 @@ public:
     double dt;
     double V;
     int l;
-    double lambdaV, chlV, shlV, thHalflV, etaM;
+    double lambdaV, chlV, shlV, thlV, etaM;
 
-    std::uniform_int_distribution<int> rdDist2;
-    std::mt19937 rdEng;
-
-    SpinlesstvHoneycombUtils(int _Lx, int _Ly, double _dt, 
-            double _V, int _l, int seed=114514) {
+    SpinlessTvHoneycombUtils(int _Lx, int _Ly, double _dt, 
+            double _V, int _l) {
     
         // model configuration
         Lx = _Lx;
@@ -44,17 +43,9 @@ public:
         lambdaV = acosh(exp(0.5*V*dt));
         chlV = cosh(lambdaV);
         shlV = sinh(lambdaV);
-        thHalflV = tanh(lambdaV*0.5);
-        etaM = 0.5*chlV + 0.5;
-
-        // random generator, Z_2 auxillary field
-        rdDist2 = std::uniform_int_distribution<int>(0, 1);
-        rdEng.seed(seed);
+        thlV = tanh(lambdaV);
+        etaM = chlV * chlV;
         
-    }
-
-    inline void rdZ2Generator(iVecType& x, int n) {
-        for (int i=0; i<n; i++) x(i) = 2*rdDist2(rdEng) - 1;
     }
 
     inline int unitCellCoord2Idx(int ix, int iy) const {
@@ -66,7 +57,7 @@ public:
     }
     
     inline int majoranaCoord2Idx(majoranaCoord s) const {
-        return nsites*s.imaj + unitCellCoord2Idx(s.ix, s.iy)*2 + s.isubcell;
+        return nsites*s.imaj + unitCellCoord2Idx(s.ix, s.iy)*2 + s.iSubcell;
     }
 
     inline int majoranaCoord2Idx(int ix, int iy, int isubcell, int imaj) const {
@@ -88,17 +79,17 @@ public:
         majoranaCoord s;
         s.imaj = idx / nsites;
         int tmp = idx % nsites;
-        s.isubcell = tmp % 2;
+        s.iSubcell = tmp % 2;
         tmp = tmp / 2;
         s.iy = tmp % Ly;
         s.ix = tmp / Ly;
         return s;
     }
 
-    inline void KineticGenerator(MatType &H, DataType t) {
+    inline void KineticGenerator(MatType &H, DataType t) const {
         H.setZero();
         int idx1, idx2;
-        DataType tmp = (0.25i) * t;
+        DataType tmp = (1.0i) * t;
         for (int i=0; i<Lx; i++) {
             for (int j=0; j<Ly; j++) {
                 for (int k=0; k<2; k++) {
@@ -120,7 +111,7 @@ public:
     // Generate the H-S transformed Hamiltonian
     // in principle ONLY be used for testing
     inline void InteractionHGenerator(MatType &H, const iVecType &s, const int bondType) const {
-        DataType tmp = lambdaV;
+        DataType tmp = (1.0i) * lambdaV;
 
         int idx1, idx2, idUnitcell;
         for (int i=0; i<Lx; i++) {
@@ -129,8 +120,9 @@ public:
                 for (int k=0; k<2; k++) {
                     idx1 = majoranaCoord2Idx(i, j, 0, k);
                     idx2 = neighborSiteIdx(i, j, k, bondType);
-                    H(idx1, idx2) = tmp * double(s(idUnitcell));
-                    H(idx2, idx1) = -tmp * double(s(idUnitcell));
+                    // std::cout << idx1 << " " << idx2 << "\n";
+                    H(idx1, idx2) += -tmp * double(s(idUnitcell));
+                    H(idx2, idx1) += +tmp * double(s(idUnitcell));
                 }
             }
         }
@@ -149,12 +141,13 @@ public:
                 for (int k=0; k<2; k++) {
                     idx1 = majoranaCoord2Idx(i, j, 0, k);
                     idx2 = neighborSiteIdx(i, j, k, bondType);
+                    // std::cout << "(" << idx1 << "," << idx2 << "\n";
                     //  |   \cosh(\lambda)           ,  -i \sinh(\lambda) \sigma |
                     //  |  +i \sinh(\lambda) \sigma  ,   \cosh(\lambda)          |
-                    B(idx1, idx2) = ch;
+                    B(idx1, idx1) = ch;
                     B(idx2, idx2) = ch;
-                    B(idx1, idx2) = -ish * double(s(idUnitcell));
-                    B(idx2, idx1) = +ish * double(s(idUnitcell));
+                    B(idx1, idx2) = +ish * double(s(idUnitcell));
+                    B(idx2, idx1) = -ish * double(s(idUnitcell));
                 }
             }
         }
@@ -166,19 +159,21 @@ public:
 class Honeycomb_tV 
 {
 public:
-    SpinlesstvHoneycombUtils* modelConfig;
+    const SpinlessTvHoneycombUtils* modelConfig;
     
     std::vector<Operator *> op_array;
     double dt;
     int l;
     int nSites, nUnitcell;
+    rdGenerator* rd;
 
-    Honeycomb_tV(SpinlesstvHoneycombUtils* _config, int _l, double _dt, double _V, int seed=114514) {
+    Honeycomb_tV(SpinlessTvHoneycombUtils* _config, int _l, double _dt, double _V, rdGenerator* _rd) {
         modelConfig = _config;
         dt = modelConfig->dt;
         l = modelConfig->l;
         nSites = modelConfig->nsites;
         nUnitcell = modelConfig->nUnitcell;
+        rd = _rd;
 
         int ndim = nSites * 2;
         MatType Ht(ndim, ndim);
@@ -189,7 +184,7 @@ public:
         for (int i = 0; i < 3 * l; i++)
         {
             s[i] = iVecType(nUnitcell);
-            modelConfig->rdZ2Generator(s[i], nUnitcell);
+            for (int j=0; j<nUnitcell; j++) s[i](j) = rd->rdZ2();
         }
         
         op_array = std::vector<Operator*>(4*l + 1);
@@ -199,11 +194,19 @@ public:
             } else {
                 op_array[4*i] = new DenseOperator(expK);
             }
-            op_array[4*i + 1] = new SpinlessVOperator(modelConfig, &(s[3*i]), 0);
-            op_array[4*i + 2] = new SpinlessVOperator(modelConfig, &(s[3*i+1]), 1);
-            op_array[4*i + 3] = new SpinlessVOperator(modelConfig, &(s[3*i+2]), 2);
+            op_array[4*i + 1] = new SpinlessVOperator(modelConfig, &(s[3*i]), 0, rd);
+            op_array[4*i + 2] = new SpinlessVOperator(modelConfig, &(s[3*i+1]), 1, rd);
+            op_array[4*i + 3] = new SpinlessVOperator(modelConfig, &(s[3*i+2]), 2, rd);
         }
         op_array[4*l] = new DenseOperator(expKhalf);
     }
+
+    ~Honeycomb_tV() {
+        for (int i=0; i<4l+1; i++) {
+            delete op_array[i];
+        }
+    }
     
 };
+
+#endif

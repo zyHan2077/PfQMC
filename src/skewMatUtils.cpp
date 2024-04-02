@@ -104,9 +104,9 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
 
 // Wrapper function for pfaffian calculation
 // A is 2N*2N matrix, temp is a 4N vector
-DataType pfaf(const int N, MatType& A, VecType& temp) {
+DataType pfaf(const int N, MatType& A, cVecType& temp) {
     DataType r = 1;
-    VecType kVec(N);
+    cVecType kVec(N);
     kVec.setZero();
     SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), kVec.data());
     for(int i=0; i<N; i++) {

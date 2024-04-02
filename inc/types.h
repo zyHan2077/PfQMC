@@ -7,6 +7,8 @@
 
 #include<float.h>
 #include<complex>
+#include<random>
+#include<iostream>
 
 #define MKL_Complex16 std::complex<double>
 
@@ -26,15 +28,43 @@ typedef Eigen::VectorXi iVecType;
 #define ind(i, j, N) (((j)*N) + i)
 const double thresholdDBL = 1.0e-300;
 
-// template <typename T>
-// struct types;
+inline DataType logDet(const MatType &H) {
+    DataType ld = 0.0;
+    Eigen::PartialPivLU<MatType> lu(H);
+    auto& LU = lu.matrixLU();
+    DataType c = lu.permutationP().determinant(); // -1 or 1
+    // std::cout << "c=" << c << "\n";
+    for (unsigned i = 0; i < LU.rows(); ++i) {
+      const DataType& lii = LU(i,i);
+    //   std::cout << lii << " q\n";
+      ld += log(lii);
+    }
+    ld += log(c);
+    return ld;
+}
 
-// template <>
-// struct types<double>
-// {
-// 	using MatrixType = Eigen::MatrixXd;
-// 	using DataType = double;
-// 	using VectorType = Eigen::VectorXd;
-// };
+class rdGenerator {
+
+private:
+    std::uniform_int_distribution<int> rdDistZ2;
+    std::uniform_real_distribution<double> rdDistUniform01;
+    std::mt19937 rdEng;
+public:
+    rdGenerator(int seed=114514) {
+        // random generator, Z_2 auxillary field
+        rdDistZ2 = std::uniform_int_distribution<int>(0, 1);
+        rdDistUniform01 = std::uniform_real_distribution<double>(0.0, 1.0);
+        rdEng.seed(seed);
+    }
+
+    inline int rdZ2() {
+        return 2*rdDistZ2(rdEng) - 1;
+    }
+
+    inline int rdUniform01() {
+        return rdDistUniform01(rdEng);
+    }
+
+};
 
 #endif
