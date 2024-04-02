@@ -189,7 +189,6 @@ TEST(FastUpdateTest, RatioSquare) {
     r2 -= logDet(tmp);
     r2 = exp(r2);
     
-    // (identity + (A*Bm)).determinant() / (identity + A).determinant();
 
     DataType r2_1 = (identity + (identity - g)*(Bm - identity)*0.5).determinant();
 
