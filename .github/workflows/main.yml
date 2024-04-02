@@ -20,6 +20,7 @@ on:
       - "**/CMakeLists.txt"
       - ".github/workflows/oneapi-linux.yml"
       - "!scripts/*"
+  workflow_dispatch:
 
 jobs:
 
