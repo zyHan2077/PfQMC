@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.13)
 PROJECT(MQMC)
 
 include_directories(
-${PROJECT_SOURCE_DIR}/inc /opt/Eigen/eigen-3.4.0
+${PROJECT_SOURCE_DIR}/inc
 )
+INCLUDE_DIRECTORIES ( ${EIGEN3_INCLUDE_DIR} )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
