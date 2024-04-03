@@ -11,15 +11,9 @@ env:
 on:
   push:
     paths:
-      - "**.c"
-      - "**.f"
-      - "**.F"
-      - "**.f90"
-      - "**.F90"
-      - "**.cmake"
-      - "**/CMakeLists.txt"
-      - ".github/workflows/oneapi-linux.yml"
-      - "!scripts/*"
+      - "src/**.cpp"
+      - "CMakeLists.txt"
+      - ".github/workflows/main.yml"
   workflow_dispatch:
 
 jobs:
@@ -49,6 +43,22 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         printenv >> $GITHUB_ENV
+
+    - name: Download EIGEN3
+      run: |
+        wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+        tar -xzf eigen-3.4.0.tar.gz
+        mv eigen-3.4.0/Eigen .
+        rm -rf eigen-3.4.0*
+    
+    - name: install Gtest
+      run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
         
     - name: CMake Configure 
-      run: cmake -B build
+      run: cmake -B build -DEIGEN3_INCLUDE_DIR=$PWD/Eigen
+    
+    - name: CMAKE Build
+      run: cmake --build build --parallel
+
+    - name: Run test
+      run: ctest --test-dir build -V
