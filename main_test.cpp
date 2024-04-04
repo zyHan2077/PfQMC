@@ -130,19 +130,55 @@ TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
 
 // test if G = 2 (I + B_1 \cdots B_l)^{-1}
 // is updated correctly
-// TEST(FastUpdateTest, GreenFunction) {
-//     int Lx = 11;
-//     int Ly = 13;
-//     int nUnitcell = Lx*Ly;
-//     int hamiltonianDim = Lx*Ly*4;
-//     SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, 10);
-//     rdGenerator rd(114514);
-//     Honeycomb_tV walker(&config, 10, 0.1, 0.7, &rd);
-//     MatType g = MatType::Identity(hamiltonianDim, hamiltonianDim);
-// }
+TEST(FastUpdateTest, GreenFunction) {
+    mkl_set_num_threads(8);
 
-// test if G_l = 2 (I + B_{l+1} \cdots B_L B_1 \cdots B_l)^{-1}
-// is updated correctly
+    int Lx = 19;
+    int Ly = 21;
+    int LTau = 20;
+    int hamiltonianDim = Lx*Ly*4;
+    const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
+    SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, LTau);
+    rdGenerator rd(114514);
+    Honeycomb_tV walker(&config, &rd);
+    MatType g;
+    MatType A = identity;
+    
+    int l = 4*LTau - 1;
+    for (int i=0; i<4*LTau; i++) {
+        // std::cout << i << " here!\n";
+        walker.op_array[i]->right_multiply(A, A);
+    }
+    walker.op_array[4*LTau]->left_multiply(A, A);
+    g = (2 * ((identity+A).inverse()) );
+    // MatType gcopy = g;
+    EXPECT_EQ(walker.op_array[l]->getType(), 2);
+    
+    bool flip = false;
+    for (int i = 0; i < 100; i++) {
+        flip = walker.op_array[l]->singleFlip(g, i, -0.1);
+        EXPECT_EQ(flip, true);
+    }
+    // std::cout << ( g + g.transpose() - (2*identity) ).squaredNorm() << " test g skew\n"; 
+
+    iVecType s = *(walker.op_array[l]->getAuxField());
+    
+    A = identity;
+    for (int i=0; i<4*LTau; i++) {
+        walker.op_array[i]->right_multiply(A, A);
+    }
+    walker.op_array[4*LTau]->left_multiply(A, A);
+    MatType gBrutal = 2 * ((identity+A).inverse());
+
+    double r = (gBrutal - g).squaredNorm();
+    // std::cout << "difference between 2 g = " << r << "\n";
+    EXPECT_NEAR(r, 0.0,  1e-15);
+    // std::cout << (gcopy - g).squaredNorm() << "\n";
+}
+
+
+// test if acceptance ratio R evaluated in fast update
+// is in accordance with R^2 given by the determinant formula
 TEST(FastUpdateTest, RatioSquare) {
     // for 8 core, nDim~1600, LTau=20
     // typically ~15 seconds
@@ -155,7 +191,7 @@ TEST(FastUpdateTest, RatioSquare) {
     const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
     SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, LTau);
     rdGenerator rd(114514);
-    Honeycomb_tV walker(&config, 10, 0.1, 0.7, &rd);
+    Honeycomb_tV walker(&config, &rd);
     MatType g = identity;
     MatType A = identity;
     
@@ -165,7 +201,7 @@ TEST(FastUpdateTest, RatioSquare) {
         walker.op_array[i]->right_multiply(A, A);
     }
     walker.op_array[4*LTau]->left_multiply(A, A);
-    g = 2 * ((g+A).inverse()) - identity;
+    g = 2 * ((identity+A).inverse());
     
     EXPECT_EQ(walker.op_array[l]->getType(), 2);
 
@@ -190,7 +226,7 @@ TEST(FastUpdateTest, RatioSquare) {
     r2 = exp(r2);
     
 
-    DataType r2_1 = (identity + (identity - g)*(Bm - identity)*0.5).determinant();
+    DataType r2_1 = (identity + ((2.0 * identity) - g)*(Bm - identity)*0.5).determinant();
 
     // std::cout << r2 << " " << r2_1 << " == r2 and r2_1 ===\n";
     EXPECT_NEAR(std::abs(r2 - r2_1), 0.0, 1e-10);
@@ -213,6 +249,6 @@ TEST(FastUpdateTest, RatioSquare) {
 
 // test if G = 2 (I + B_1 \cdots B_l)^{-1}
 // is updated correctly
-TEST(FastUpdateTest, Ratio) {
+// TEST(FastUpdateTest, Ratio) {
 
-}
+// }

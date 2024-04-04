@@ -36,6 +36,7 @@ bool SpinlessVOperator::singleFlip(MatType &g, int idxCell, double rand) {
     }
 
     bool flag = rand < std::abs(r);
+    // std::cout << "r = " << r << "\n";
 
     if (flag) {
         for (int imaj = 0; imaj < 2; imaj ++) {
@@ -48,12 +49,14 @@ bool SpinlessVOperator::singleFlip(MatType &g, int idxCell, double rand) {
             B(idx2, idx1) = -B(idx2, idx1);
 
             // update Green's function
-            cVecType x1 = B.col(idx1);
-            cVecType x2 = B.col(idx2);
-            alpha = (-1.0i) * (config->thlV) / tmp[imaj];
-            zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc, B.data(), &nDim);
+            cVecType x1 = -g.col(idx1);
+            cVecType x2 = -g.col(idx2);
+            x1(idx1) += 2;
+            x2(idx2) += 2;
+            alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[imaj];
+            zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc, g.data(), &nDim);
             alpha = -alpha;
-            zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc, B.data(), &nDim);
+            zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc, g.data(), &nDim);
         }
     }
 

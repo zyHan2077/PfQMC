@@ -167,7 +167,7 @@ public:
     int nSites, nUnitcell;
     rdGenerator* rd;
 
-    Honeycomb_tV(SpinlessTvHoneycombUtils* _config, int _l, double _dt, double _V, rdGenerator* _rd) {
+    Honeycomb_tV(SpinlessTvHoneycombUtils* _config, rdGenerator* _rd) {
         modelConfig = _config;
         dt = modelConfig->dt;
         l = modelConfig->l;
