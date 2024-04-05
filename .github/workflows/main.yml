@@ -27,7 +27,7 @@ jobs:
 
     - name: cache install oneAPI
       id: cache-install
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           /opt/intel/oneapi
@@ -44,7 +44,16 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         printenv >> $GITHUB_ENV
 
+    - name: cache Download Eigen3
+      id: cache-eigen3
+      uses: actions/cache@v4
+      with:
+        path: |
+          $PWD/Eigen
+        key: download-eigen3
+
     - name: Download EIGEN3
+      if: steps.cache-eigen3.outputs.cache-hit != 'true'
       run: |
         wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
         tar -xzf eigen-3.4.0.tar.gz
@@ -61,4 +70,5 @@ jobs:
       run: cmake --build build --parallel
 
     - name: Run test
+      timeout-minutes: 10
       run: ctest --test-dir build -V

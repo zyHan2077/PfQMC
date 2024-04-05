@@ -24,6 +24,7 @@ const DataType one{1.0, 0.0};
 // const DataType im{0.0, 1.0};
 typedef Eigen::MatrixXcd MatType;
 typedef Eigen::VectorXcd cVecType;
+typedef Eigen::VectorXd dVecType;
 typedef Eigen::VectorXi iVecType;
 #define ind(i, j, N) (((j)*N) + i)
 const double thresholdDBL = 1.0e-300;
