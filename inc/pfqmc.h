@@ -13,32 +13,42 @@ class PfQMC {
     int op_length;
     std::vector<bool> need_stabilization;
     int checkpoints;
+    std::vector<UDT*> udtR;
+    UDT* Al;
 
     PfQMC(Honeycomb_tV *walker, int _stb = 10);
-    ~PfQMC();
-};
 
-PfQMC::PfQMC(Honeycomb_tV *walker, int _stb) {
-    stb = _stb;
-    nDim = (walker->nSites) * 2;
-    g = MatType::Identity(nDim, nDim);
-    op_array = &(walker->op_array);
-    op_length = op_array->size();
-
-    need_stabilization = std::vector<bool>(op_length + 1);
-    checkpoints = 0;
-    bool flag;
-    for (int i = 0; i < (op_length + 1); i++) {
-        flag = ((i % stb) == 0) | (i == op_length);
-        need_stabilization[i] = flag;
-        if (flag) {
-            checkpoints++;
+    void rightInit() {
+        int id = 0;
+        MatType Aseg, Atmp;
+        for (int i=0; i<checkpoints; i++) {
+            Aseg = MatType::Identity(nDim, nDim);
+            for (int j=0; j<stb; j++) {
+                (*op_array)[id]->left_multiply(Aseg, Atmp);
+                std::swap(Aseg, Atmp);
+                id++; 
+                if (id >= op_length) break;
+            }
+            udtR[i] = new UDT(Aseg, nDim);
         }
+        
+        Al = udtR[0];
+        for (int i=1; i<checkpoints; i++) {
+            udtR[i]->factorizedMult(*Al, nDim);
+        }
+
     }
 
+    void sweep() {
 
-}
+    }
 
-PfQMC::~PfQMC() {}
+    //
+    void greenFunctionUpdate() {
+
+    }
+};
+
+
 
 #endif

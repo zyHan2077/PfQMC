@@ -9,11 +9,17 @@ public:
     MatType U;
     dVecType D;
     MatType T;
-    UDT(MatType& _U, dVecType& _D, MatType& _T) {
+
+    UDT(const MatType& _U, const dVecType& _D, const MatType& _T) {
         U = _U;
         D = _D;
         T = _T;
     }
+
+    // UDT& operator=(const UDT& other) {
+    //     UDT F(other.U, other.D, other.T);
+    //     return F;
+    // }
 
     // use qr to get UDT decomposition
     UDT(MatType& A, const int nDim) {
@@ -49,7 +55,7 @@ public:
         U = A;
     }
 
-    inline UDT factorizedMult(UDT& F, int nDim) {
+    inline UDT factorizedMult(UDT F, int nDim) {
         MatType mat = T * F.U;
         mat = D.asDiagonal() * mat;
         mat = mat * F.D.asDiagonal();
@@ -57,6 +63,52 @@ public:
         tmp.U = U * tmp.U;
         tmp.T = tmp.T * F.T;
         return tmp;
+    }
+
+    inline void onePlusInv(int nDim, MatType& g) const {
+        MatType Xinv = T;
+        MatType tmp1, tmp2;
+        // std::cout << Tn << "\n === \n";
+        int ipiv[nDim];
+        LAPACKE_zgetrf(LAPACK_COL_MAJOR, nDim, nDim, Xinv.data(), nDim, ipiv);
+        // std::cout << "ipiv= " << ipiv << "\n";
+        // std::cout << Tn << "\n";
+        LAPACKE_zgetri(LAPACK_COL_MAJOR, nDim, Xinv.data(), nDim, ipiv);
+
+        // std::cout << "Xinv * X - I = " << (Xinv*T - MatType::Identity(nDim, nDim)).squaredNorm() << "\n";
+
+        dVecType Dpinv(nDim);
+        dVecType Dm(nDim);
+        for(int i=0; i<nDim; i++) {
+            Dpinv(i) = 1.0 / std::max(D(i), 1.0);
+            Dm(i) = std::min(D(i), 1.0);
+        }
+
+        tmp1 = Xinv * Dpinv.asDiagonal();
+        tmp2 = U * Dm.asDiagonal();
+        tmp1 = tmp1 + tmp2;
+
+        UDT f = UDT(tmp1, nDim);
+        LAPACKE_zgetrf(LAPACK_COL_MAJOR, nDim, nDim, f.T.data(), nDim, ipiv);
+        LAPACKE_zgetri(LAPACK_COL_MAJOR, nDim, f.T.data(), nDim, ipiv);
+
+        // std::cout << "Uinv * U - I = " << ((f.U)*(f.U.adjoint()) - MatType::Identity(nDim, nDim)).squaredNorm() << "\n";
+
+        // MatType identity = MatType::Identity(nDim, nDim);
+        // g = Xinv * Dpinv.asDiagonal() * f.T * (f.U * f.D.asDiagonal()).inverse();
+        // return;
+
+        tmp1 = (f.T) * (f.D.cwiseInverse()).asDiagonal();
+        tmp2 = tmp1 * f.U.adjoint();
+        tmp1 = Dpinv.asDiagonal() * tmp2;
+
+        f = UDT(tmp1, nDim);
+
+        f.D *= 2.0;
+
+        tmp2 = Xinv * f.U;
+        tmp1 = tmp2 * f.D.asDiagonal();
+        g = tmp1 * f.T;
     }
 };
 

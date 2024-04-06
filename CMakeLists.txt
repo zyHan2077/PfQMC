@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES ( ${EIGEN3_INCLUDE_DIR} )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(SRC_LIST src/skewMatUtils.cpp src/operator.cpp)
+set(SRC_LIST src/skewMatUtils.cpp src/operator.cpp src/pfqmc.cpp)
 
 set(MKL_INTERFACE lp64)
 

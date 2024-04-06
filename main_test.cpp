@@ -250,7 +250,7 @@ TEST(FastUpdateTest, RatioSquare) {
 
 TEST(QR_Factorization, UDT_Decomposition) {
     srand(114514);
-    int nDim = 100;
+    int nDim = 1000;
     MatType A1 = MatType::Random(nDim, nDim);
     MatType A2 = MatType::Random(nDim, nDim);
     // std::cout << "A=\n" << A << "\n";
@@ -266,5 +266,16 @@ TEST(QR_Factorization, UDT_Decomposition) {
     UDT F3 = F1.factorizedMult(F2, nDim);
     double r = ((F3.U * F3.D.asDiagonal() * F3.T) - (A1copy * A2copy)).squaredNorm();
     // std::cout << "r=" << r << "\n";
-    EXPECT_NEAR(r, 0.0, 1e-20);
+    EXPECT_NEAR(r, 0.0, 1e-18);
+
+    // Green function test
+    MatType g;
+    MatType gBrutal = MatType::Identity(nDim, nDim);
+    gBrutal = (gBrutal + ((F3.U * F3.D.asDiagonal()) * F3.T)).inverse() * 2.0;
+    F3.onePlusInv(nDim, g);
+    // std::cout << g << "\n====\n";
+    // std::cout << gBrutal << "\n";
+    // std::cout << (g - gBrutal).squaredNorm() << "\n";
+    EXPECT_NEAR((g - gBrutal).squaredNorm(), 0.0, 1e-15);
+
 }
