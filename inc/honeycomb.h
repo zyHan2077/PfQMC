@@ -128,11 +128,31 @@ public:
         }
     }
 
+    // Generate the Greens function for single slice
+    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType) const {
+        DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
+
+        int idx1, idx2, idUnitcell;
+        for (int i=0; i<Lx; i++) {
+            for (int j=0; j<Ly; j++) {
+                idUnitcell = unitCellCoord2Idx(i, j);
+                for (int k=0; k<2; k++) {
+                    idx1 = majoranaCoord2Idx(i, j, 0, k);
+                    idx2 = neighborSiteIdx(i, j, k, bondType);
+                    // std::cout << idx1 << " " << idx2 << "\n";
+                    H(idx1, idx2) += -tmp * double(s(idUnitcell));
+                    H(idx2, idx1) += +tmp * double(s(idUnitcell));
+                }
+            }
+        }
+    }
+
     // Directly generate B by directly writing each 2*2 block
     // B should be initialized as Identity
-    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType) const {
+    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const {
         DataType ch = chlV;
         DataType ish = (1.0i) * shlV;
+        if (inv) ish = -ish;
 
         int idx1, idx2, idUnitcell;
         for (int i=0; i<Lx; i++) {
@@ -175,8 +195,9 @@ public:
         nUnitcell = modelConfig->nUnitcell;
         rd = _rd;
 
-        int ndim = nSites * 2;
-        MatType Ht(ndim, ndim);
+        int nDim = nSites * 2;
+        MatType Ht(nDim, nDim);
+        const MatType identity = MatType::Identity(nDim, nDim);
         modelConfig->KineticGenerator(Ht, 1.0);
         MatType expK = expm(Ht, -dt);
         MatType expKhalf = expm(Ht, -dt / 2.0);
@@ -190,15 +211,15 @@ public:
         op_array = std::vector<Operator*>(4*l + 1);
         for (int i=0; i<l; i++) {
             if (i == 0) {
-                op_array[0] = new DenseOperator(expKhalf);
+                op_array[0] = new DenseOperator(expKhalf, 1.0);
             } else {
-                op_array[4*i] = new DenseOperator(expK);
+                op_array[4*i] = new DenseOperator(expK, 1.0);
             }
             op_array[4*i + 1] = new SpinlessVOperator(modelConfig, &(s[3*i]), 0, rd);
             op_array[4*i + 2] = new SpinlessVOperator(modelConfig, &(s[3*i+1]), 1, rd);
             op_array[4*i + 3] = new SpinlessVOperator(modelConfig, &(s[3*i+2]), 2, rd);
         }
-        op_array[4*l] = new DenseOperator(expKhalf);
+        op_array[4*l] = new DenseOperator(expKhalf, 1.0);
     }
 
     ~Honeycomb_tV() {

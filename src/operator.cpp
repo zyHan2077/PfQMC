@@ -12,9 +12,9 @@ SpinlessVOperator::SpinlessVOperator(const SpinlessTvHoneycombUtils* _config, iV
     config->InteractionBGenerator(B, *s, bondType);
 }
 
-void SpinlessVOperator::reCalc() {
-    B = MatType::Identity(nDim, nDim);
-    config->InteractionBGenerator(B, *s, bondType);
+void SpinlessVOperator::reCalcInv() {
+    B_inv = MatType::Identity(nDim, nDim);
+    config->InteractionBGenerator(B_inv, *s, bondType, true);
 }
 
 bool SpinlessVOperator::singleFlip(MatType &g, int idxCell, double rand) {
@@ -73,4 +73,9 @@ void SpinlessVOperator::update(MatType &g) {
 
 void SpinlessVOperator::right_multiply(const MatType &AIn, MatType &AOut) {
     AOut = AIn * B;
+}
+
+void SpinlessVOperator::getGreensMat(MatType& g){
+    g = MatType::Zero(nDim, nDim);
+    config->InteractionTanhGenerator(g, *s, bondType);
 }

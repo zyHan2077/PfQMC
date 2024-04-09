@@ -20,7 +20,7 @@ TEST(PfaffianTest, SimpleIntegerMatrix) {
                           -28079775960320, 5447517439766528};
 
     MatType A(L, L);
-    cVecType temp(2 * L);
+    // cVecType temp(2 * L);
 
     // initialize
     int count = 1;
@@ -34,7 +34,7 @@ TEST(PfaffianTest, SimpleIntegerMatrix) {
 
     for (int l = 2; l <= L; l += 2) {
         MatType ABlock = A(Eigen::seq(0, l - 1), Eigen::seq(0, l - 1));
-        DataType pf = pfaf(l / 2, ABlock, temp);
+        DataType pf = pfaf(l / 2, ABlock);
         double pf0 = result[(l / 2) - 1];
         EXPECT_NEAR((pf.real() - pf0) / pf0, 0.0, 1e-10) << "failed with l = " << l << "and pf = " << pf << "\n";
     }
@@ -47,7 +47,7 @@ TEST(PfaffianTest, RandomEntries) {
     int Nrounds = 100;
     int L = 2 * N;
     srand(114514);
-    cVecType temp(4 * N);
+    // cVecType temp(4 * N);
     DataType pf, det, pf2;
     std::vector<MatType> matList;
     std::vector<DataType> detList;
@@ -69,7 +69,7 @@ TEST(PfaffianTest, RandomEntries) {
 
     t2 = clock();
     for (auto A : matList) {
-        pfList.push_back(pfaf(N, A, temp));
+        pfList.push_back(pfaf(N, A));
     }
     t2 = clock() - t2;
 
@@ -87,11 +87,34 @@ TEST(PfaffianTest, RandomEntries) {
     MPRINTF("Do not take this result seriously if you are multi-threading\n");
 }
 
+TEST(PfaffianTest, MonteCarloWeight) {
+    int Lx = 3;
+    int Ly = 3;
+    int nUnitcell = Lx * Ly;
+    int nDim = Lx * Ly * 4;
+    SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, 10);
+
+    // test if Hv1 + Hv2 + Hv3 \propto Ht
+    MatType Ht(nDim, nDim);
+    config.KineticGenerator(Ht, config.lambdaV);
+    MatType B = expm(Ht, -1.0);
+
+    DataType eta = pfaffianForEta(Ht);
+    DataType w = (MatType::Identity(nDim, nDim) + B).determinant();
+    // std::cout << eta << " eta**2 = " << eta*eta << " w= " << w << "\n";
+    EXPECT_NEAR(std::abs((eta*eta / w) - 1.0), 0.0, 1e-10);
+
+    DataType signEta = pfaffianForSignOfEta(Ht);
+    // std::cout << eta / std::abs(eta) << " signOfEta = " << signEta << "\n";
+    // EXPECT_NEAR(std::abs(signEta - eta / std::abs(eta)), 0.0, 1e-30);
+    EXPECT_NEAR(std::abs(signEta - 1.0), 0.0, 1e-10);
+}
+
 TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
     // Lx, Ly should be >= 2
     // so that the PBC does not double counts
-    int Lx = 11;
-    int Ly = 13;
+    int Lx = 19;
+    int Ly = 21;
     int nUnitcell = Lx * Ly;
     int hamiltonianDim = Lx * Ly * 4;
     SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, 10);
@@ -114,6 +137,7 @@ TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
     // test if exp(-Hv) = B
     MatType B;
     rdGenerator rd(114514);
+    const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
     for (int i = 0; i < nUnitcell; i++) s[i] = rd.rdZ2();
 
     for (int bType = 0; bType < 3; bType++) {
@@ -127,6 +151,11 @@ TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
         r = (Hv - B).squaredNorm();
         // std::cout << r << "\n";
         EXPECT_NEAR(r, 0.0, 1e-20);
+
+        MatType g = (identity + B).inverse() * 2.0 - identity;
+        MatType g1 = MatType::Zero(hamiltonianDim, hamiltonianDim);
+        config.InteractionTanhGenerator(g1, s, bType);
+        EXPECT_NEAR((g-g1).squaredNorm(), 0.0, 1e-20);
     }
 }
 
@@ -135,8 +164,8 @@ TEST(HamiltonianGeneratorTest, honeycombKineticAndInteraction) {
 TEST(FastUpdateTest, GreenFunction) {
     mkl_set_num_threads(8);
 
-    int Lx = 19;
-    int Ly = 21;
+    int Lx = 11;
+    int Ly = 9;
     int LTau = 20;
     int hamiltonianDim = Lx * Ly * 4;
     const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
@@ -159,7 +188,7 @@ TEST(FastUpdateTest, GreenFunction) {
     EXPECT_EQ(walker.op_array[l]->getType(), 2);
 
     bool flip = false;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < (Lx*Ly)/2; i++) {
         flip = walker.op_array[l]->singleFlip(g, i, -0.1);
         EXPECT_EQ(flip, true);
     }
@@ -188,8 +217,8 @@ TEST(FastUpdateTest, RatioSquare) {
     // typically ~15 seconds
     mkl_set_num_threads(8);
 
-    int Lx = 19;
-    int Ly = 21;
+    int Lx = 9;
+    int Ly = 11;
     int LTau = 20;
     int hamiltonianDim = Lx * Ly * 4;
     const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
@@ -249,6 +278,9 @@ TEST(FastUpdateTest, RatioSquare) {
 }
 
 TEST(QR_Factorization, UDT_Decomposition) {
+
+    mkl_set_num_threads(8);
+
     srand(114514);
     int nDim = 1000;
     MatType A1 = MatType::Random(nDim, nDim);
@@ -263,19 +295,20 @@ TEST(QR_Factorization, UDT_Decomposition) {
     EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - A1copy).squaredNorm(), 0.0, 1e-20);
 
     UDT F2(A2, nDim);
-    UDT F3 = F1.factorizedMult(F2, nDim);
-    double r = ((F3.U * F3.D.asDiagonal() * F3.T) - (A1copy * A2copy)).squaredNorm();
+    F1.factorizedMultUpdate(F2, nDim);
+    double r = ((F2.U * F2.D.asDiagonal() * F2.T) - (A1copy * A2copy)).squaredNorm();
     // std::cout << "r=" << r << "\n";
     EXPECT_NEAR(r, 0.0, 1e-18);
 
     // Green function test
     MatType g;
     MatType gBrutal = MatType::Identity(nDim, nDim);
-    gBrutal = (gBrutal + ((F3.U * F3.D.asDiagonal()) * F3.T)).inverse() * 2.0;
-    F3.onePlusInv(nDim, g);
+    gBrutal = (gBrutal + ((F2.U * F2.D.asDiagonal()) * F2.T)).inverse() * 2.0;
+    F2.onePlusInv(nDim, g);
     // std::cout << g << "\n====\n";
     // std::cout << gBrutal << "\n";
     // std::cout << (g - gBrutal).squaredNorm() << "\n";
     EXPECT_NEAR((g - gBrutal).squaredNorm(), 0.0, 1e-15);
 
 }
+

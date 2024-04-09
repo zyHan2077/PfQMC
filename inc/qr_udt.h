@@ -55,14 +55,15 @@ public:
         U = A;
     }
 
-    inline UDT factorizedMult(UDT F, int nDim) {
+    // F = (*this) * F
+    inline void factorizedMultUpdate(UDT& F, int nDim) {
         MatType mat = T * F.U;
         mat = D.asDiagonal() * mat;
         mat = mat * F.D.asDiagonal();
         UDT tmp(mat, nDim);
-        tmp.U = U * tmp.U;
-        tmp.T = tmp.T * F.T;
-        return tmp;
+        F.U = U * tmp.U;
+        F.T = tmp.T * F.T;
+        F.D = tmp.D;
     }
 
     inline void onePlusInv(int nDim, MatType& g) const {

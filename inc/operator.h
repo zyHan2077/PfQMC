@@ -17,7 +17,9 @@ public:
     virtual void inv_right_multiply(const MatType &A, MatType &B){};
     virtual void adjoint_inv_right_multiply(const MatType &A, MatType &B){};
     virtual void left_propagate(MatType &A, MatType &B){};
-    virtual void update(MatType &d_gbar, MatType &d_gbaru, MatType &d_gbarv){};
+    virtual void update(MatType &g){};
+    virtual DataType getSign() {return 1.0;};
+    virtual void getGreensMat(MatType &g0) {};
 
     virtual iVecType* getAuxField(){return NULL;};
     virtual int getType(){return -1;};
@@ -29,7 +31,9 @@ class DenseOperator : public Operator
 public:
     MatType mat;
     MatType mat_inv;
-    DenseOperator(MatType &mat_)
+    MatType g0;
+    DataType sign;
+    DenseOperator(const MatType &mat_, DataType _s)
     {
         // this->N = Mat.rows();
         // this->para_cols = this->N;
@@ -37,7 +41,12 @@ public:
         // this->para = &mat;
         mat = mat_;
         mat_inv = mat_.inverse();
+        sign = _s;
+        
+        int nDim = mat.cols();
+        g0 = (MatType::Identity(nDim, nDim)+mat).inverse() * 2.0 - MatType::Identity(nDim, nDim);
     }
+
     void left_multiply(const MatType &A, MatType &B) override
     {
         B = mat * A;
@@ -66,6 +75,13 @@ public:
     {
         B = mat * A;
         A = B * mat_inv;
+    }
+    DataType getSign() override {
+        return sign;
+    }
+
+    void getGreensMat(MatType &g) override {
+        g = g0;
     }
 };
 
@@ -96,18 +112,24 @@ public:
         delete s;
     }
 
-    void reCalc();
-
+    void reCalcInv();
 
     bool singleFlip(MatType &g, int idxCell, double rand) override;
 
-    void update(MatType &g);
+    void update(MatType &g) override;
 
     void right_multiply(const MatType &AIn, MatType &AOut) override;
 
     void left_multiply(const MatType &AIn, MatType &Aout) override
     {
         Aout = B * AIn;
+    }
+
+    void left_propagate(MatType &g, MatType &gTmp) override
+    {
+        reCalcInv();
+        gTmp = B * g;
+        g = gTmp * B_inv;
     }
 
     iVecType* getAuxField() override {
@@ -117,6 +139,8 @@ public:
     int getType() override {
         return bondType;
     }
+
+    void getGreensMat(MatType& g) override;
 };
 
 #endif

@@ -11,7 +11,7 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
 
 DataType matDet(uint L, DataType* mat, lapack_int* temp);
 
-DataType pfaf(const int N, MatType& A, cVecType& temp);
+DataType pfaf(const int N, MatType& A);
 
 inline MatType expm(MatType &H, double lambda)
 {
@@ -25,5 +25,13 @@ inline MatType expm(MatType &H, double lambda)
     expK.noalias() = V * D.asDiagonal() * V.adjoint();
     return expK;
 }
+
+// calculate eta directly using
+// eta = (-2)^N Pf [...]
+// should only be used for testing
+void generateMatForEta(const MatType& H, MatType& A);
+
+DataType pfaffianForEta(const MatType &H);
+DataType pfaffianForSignOfEta(const MatType &H);
 
 #endif

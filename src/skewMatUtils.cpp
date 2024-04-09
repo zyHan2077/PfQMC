@@ -104,13 +104,25 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
 
 // Wrapper function for pfaffian calculation
 // A is 2N*2N matrix, temp is a 4N vector
-DataType pfaf(const int N, MatType& A, cVecType& temp) {
+DataType pfaf(const int N, MatType& A) {
     DataType r = 1;
-    cVecType kVec(N);
-    kVec.setZero();
+    cVecType kVec = cVecType::Zero(N);
+    cVecType temp(4*N);
     SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), kVec.data());
     for(int i=0; i<N; i++) {
-        r *= kVec[i];
+        r *= kVec(i);
+    }
+    return r;
+}
+
+DataType signOfPfaf(const int N, MatType& A) {
+    DataType r = 1.0;
+    cVecType kVec = cVecType::Zero(N);
+    cVecType temp(4*N);
+    SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), kVec.data());
+    for(int i=0; i<N; i++) {
+        if (kVec(i) == 0.0) return 0.0; // TODO: DBL check?
+        r *= kVec(i) / std::abs(kVec(i));
     }
     return r;
 }
@@ -122,3 +134,44 @@ void complexNorm2(const DataType* x, MKL_INT len, DataType* res) {
     zdotc(res, &len, x, &inc, x, &inc);
 }
 
+void generateMatForEta(const MatType& H, MatType& A) {
+    int n = H.cols() / 2;
+    Eigen::SelfAdjointEigenSolver<MatType> es(H);
+    MatType V = es.eigenvectors();
+    cVecType D = es.eigenvalues();
+    int N = H.rows();
+    MatType sinhH(N, N);
+    D = D * 0.25;
+    cVecType expd = (D.array().exp() - (-D).array().exp())*0.5 * sqrt(2);
+    sinhH.noalias() = V * expd.asDiagonal() * V.adjoint();
+
+    A = MatType::Zero(4*n, 4*n);
+    A.block(0, 0, 2*n, 2*n) = sinhH;
+    A.block(2*n, 2*n, 2*n, 2*n) = sinhH;
+    A.block(0, 2*n, 2*n, 2*n) = - MatType::Identity(2*n, 2*n);
+    A.block(2*n, 0, 2*n, 2*n) = MatType::Identity(2*n, 2*n);
+}
+
+
+ DataType pfaffianForEta(const MatType &H) {
+    int n = H.cols() / 2;
+    MatType A;
+    generateMatForEta(H, A);
+
+    // cVecType tmp(8*n);
+    DataType r = pfaf(2*n, A);
+    r = r * pow(2, n);
+    if (n%2 == 1) r = -r;
+    return r;
+}
+
+ DataType pfaffianForSignOfEta(const MatType &H) {
+    int n = H.cols() / 2;
+    MatType A;
+    generateMatForEta(H, A);
+
+    // cVecType tmp(8*n);
+    DataType r = signOfPfaf(2*n, A);
+    if (n%2 == 1) r = -r;
+    return r;
+}
