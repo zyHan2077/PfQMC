@@ -175,3 +175,15 @@ void generateMatForEta(const MatType& H, MatType& A) {
     if (n%2 == 1) r = -r;
     return r;
 }
+
+DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2) {
+    int n = G1.cols() / 2;
+    MatType A = MatType::Zero(4*n, 4*n);
+    A.block(0, 0, 2*n, 2*n) = G1;
+    A.block(2*n, 2*n, 2*n, 2*n) = G2;
+    A.block(0, 2*n, 2*n, 2*n) = - MatType::Identity(2*n, 2*n);
+    A.block(2*n, 0, 2*n, 2*n) = MatType::Identity(2*n, 2*n);
+
+    DataType r = signOfPfaf(2*n, A);
+    return r;
+}

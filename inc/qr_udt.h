@@ -10,6 +10,12 @@ public:
     dVecType D;
     MatType T;
 
+    UDT(int nDim) {
+        U = MatType::Identity(nDim, nDim);
+        D = dVecType::Ones(nDim);
+        T = MatType::Identity(nDim, nDim);
+    }
+
     UDT(const MatType& _U, const dVecType& _D, const MatType& _T) {
         U = _U;
         D = _D;
@@ -66,6 +72,20 @@ public:
         F.D = tmp.D;
     }
 
+    // (*this) = B * (*this)
+    inline void bMultUpdate(const MatType& B, int nDim) {
+        // MatType r = ((B * U) * D.asDiagonal()) * T;
+        MatType tmp = B * U;
+        MatType tmp2 = tmp * D.asDiagonal();
+        UDT F(tmp2, nDim);
+        U = F.U;
+        D = F.D;
+        // std::cout << " r - UDTT " << (r - U * D.asDiagonal() * F.T * T).squaredNorm() << "\n";
+        tmp = (F.T) * T;
+        T = tmp;
+    }
+
+    // g = 2 * (1 + UDT)^{-1}
     inline void onePlusInv(int nDim, MatType& g) const {
         MatType Xinv = T;
         MatType tmp1, tmp2;

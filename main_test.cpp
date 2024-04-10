@@ -309,6 +309,40 @@ TEST(QR_Factorization, UDT_Decomposition) {
     // std::cout << gBrutal << "\n";
     // std::cout << (g - gBrutal).squaredNorm() << "\n";
     EXPECT_NEAR((g - gBrutal).squaredNorm(), 0.0, 1e-15);
+}
 
+TEST(QR_Factorization, BMult) {
+    srand(114514);
+    int nDim = 1000;
+    MatType A1 = MatType::Random(nDim, nDim);
+    UDT id(nDim);
+    EXPECT_NEAR( (id.U * id.D.asDiagonal() * id.T - 
+                MatType::Identity(nDim, nDim)).squaredNorm(), 0.0, 
+                1e-20);
+    MatType A1copy = A1;
+    UDT F1(A1, nDim);
+    EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - A1copy).squaredNorm(), 0.0, 1e-20);
+
+    MatType A2 = MatType::Random(nDim, nDim);
+    // A2 = MatType::Identity(nDim, nDim);
+    F1.bMultUpdate(A2, nDim);
+    EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - (A2 * A1copy)).squaredNorm(), 0.0, 1e-20);
+}
+
+TEST(PFQMC, GetSignTest) {
+    mkl_set_num_threads(8);
+
+    int Lx = 10;
+    int Ly = 10;
+    int LTau = 10;
+    int hamiltonianDim = Lx * Ly * 4;
+    const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
+    SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, LTau);
+    rdGenerator rd(114514);
+    Honeycomb_tV walker(&config, &rd);
+    PfQMC pfqmc(&walker, 10);
+    DataType s = pfqmc.getSign();
+    // std::cout << s << "\n";
+    EXPECT_NEAR(std::abs(s-1.0), 0.0, 1e-10);
 }
 

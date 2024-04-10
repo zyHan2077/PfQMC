@@ -33,5 +33,6 @@ void generateMatForEta(const MatType& H, MatType& A);
 
 DataType pfaffianForEta(const MatType &H);
 DataType pfaffianForSignOfEta(const MatType &H);
+DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2);
 
 #endif

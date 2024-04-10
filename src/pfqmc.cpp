@@ -21,6 +21,5 @@ PfQMC::PfQMC(Honeycomb_tV *walker, int _stb) {
         }
     }
     udtR = std::vector<UDT*>(checkpoints);
-
-    // rightInit();
+    rightInit();
 }

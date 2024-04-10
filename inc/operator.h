@@ -2,6 +2,7 @@
 #define Operator_H
 
 #include "types.h"
+#include "qr_udt.h"
 
 class Operator
 {
@@ -20,6 +21,9 @@ public:
     virtual void update(MatType &g){};
     virtual DataType getSign() {return 1.0;};
     virtual void getGreensMat(MatType &g0) {};
+
+    // F = B * F
+    virtual void stabilizedLeftMultiply(UDT& F) {};
 
     virtual iVecType* getAuxField(){return NULL;};
     virtual int getType(){return -1;};
@@ -83,6 +87,10 @@ public:
     void getGreensMat(MatType &g) override {
         g = g0;
     }
+
+    void stabilizedLeftMultiply(UDT& F) override {
+        F.bMultUpdate(mat, mat.cols());
+    }
 };
 
 class SpinlessTvHoneycombUtils;
@@ -141,6 +149,10 @@ public:
     }
 
     void getGreensMat(MatType& g) override;
+
+    void stabilizedLeftMultiply(UDT& F) override {
+        F.bMultUpdate(B, nDim);
+    }
 };
 
 #endif

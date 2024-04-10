@@ -82,7 +82,28 @@ class PfQMC {
     }
 
     DataType getSign() {
-        return 1.0;
+        const MatType identity = MatType::Identity(nDim, nDim);
+        const DataType extraSign = ((nDim / 2) % 2 == 0) ? 1.0 : -1.0;
+        UDT A(nDim);
+        op_array->at(0)->stabilizedLeftMultiply(A);
+        MatType gNext, gCur;
+        DataType signCur, signNext, signPfaf;
+        signCur = op_array->at(0)->getSign();
+        A.onePlusInv(nDim, gCur); gCur -= identity;
+        for (int i=1; i<op_length; i++) {
+            op_array->at(i)->getGreensMat(gNext);
+            signNext = op_array->at(i)->getSign();
+            // std::cout << gNext << "==== gnext ====\n \n";
+            // std::cout << gCur << "==== gcur ====\n \n";
+            signPfaf = pfaffianForSignOfProduct(gNext, gCur);
+            signCur = (signCur * signNext * signPfaf * extraSign);
+            
+            // std::cout << signCur << " sign cur\n";
+            if (i == op_length-1) break;
+            op_array->at(i)->stabilizedLeftMultiply(A);
+            A.onePlusInv(nDim, gCur); gCur -= identity;
+        }
+        return signCur;
     }
 
     ~PfQMC() {
