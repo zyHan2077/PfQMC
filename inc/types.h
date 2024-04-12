@@ -62,7 +62,7 @@ public:
         return 2*rdDistZ2(rdEng) - 1;
     }
 
-    inline int rdUniform01() {
+    inline double rdUniform01() {
         // double r = rdDistUniform01(rdEng);
         // return r;
         return rdDistUniform01(rdEng);

@@ -26,7 +26,7 @@ set(CMAKE_CXX_COMPILER "icpx")
 set(CMAKE_C_LINK)
 set(FP_MODEL_FLAGS "-fp-model=precise -fimf-arch-consistency=true -no-fma")
 
-set(WARNING_FLAGS "-Wall")
+# set(WARNING_FLAGS "-Wall")
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${FP_MODEL_FLAGS} ${WARNING_FLAGS}")
 

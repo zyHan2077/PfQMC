@@ -12,6 +12,10 @@ SpinlessVOperator::SpinlessVOperator(const SpinlessTvHoneycombUtils* _config, iV
     config->InteractionBGenerator(B, *s, bondType);
 }
 
+SpinlessVOperator::~SpinlessVOperator() {
+    delete s;
+}
+
 void SpinlessVOperator::reCalcInv() {
     B_inv = MatType::Identity(nDim, nDim);
     config->InteractionBGenerator(B_inv, *s, bondType, true);

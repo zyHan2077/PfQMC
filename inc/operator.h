@@ -117,9 +117,7 @@ public:
     // _s: aux fields, Z_2 variable, length = nUnitcell
     SpinlessVOperator(const SpinlessTvHoneycombUtils* _config, iVecType* _s, int _bondType, rdGenerator* _rd);
 
-    ~SpinlessVOperator() {
-        delete s;
-    }
+    ~SpinlessVOperator() override;
 
     void reCalcInv();
 

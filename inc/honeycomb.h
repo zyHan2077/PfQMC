@@ -237,23 +237,21 @@ public:
         modelConfig->KineticGenerator(Ht, 1.0);
         MatType expK = expm(Ht, -dt);
         MatType expKhalf = expm(Ht, -dt / 2.0);
-        auto s = new iVecType[3*l];
-        for (int i = 0; i < 3 * l; i++)
-        {
-            s[i] = iVecType(nUnitcell);
-            for (int j=0; j<nUnitcell; j++) s[i](j) = rd->rdZ2();
-        }
         
         op_array = std::vector<Operator*>(4*l + 1);
+        iVecType* s;
         for (int i=0; i<l; i++) {
             if (i == 0) {
                 op_array[0] = new DenseOperator(expKhalf, 1.0);
             } else {
                 op_array[4*i] = new DenseOperator(expK, 1.0);
             }
-            op_array[4*i + 1] = new SpinlessVOperator(modelConfig, &(s[3*i]), 0, rd);
-            op_array[4*i + 2] = new SpinlessVOperator(modelConfig, &(s[3*i+1]), 1, rd);
-            op_array[4*i + 3] = new SpinlessVOperator(modelConfig, &(s[3*i+2]), 2, rd);
+
+            for (int j=0; j<3; j++) {
+                s = new iVecType(nUnitcell);
+                for (int k=0; k<nUnitcell; k++) (*s)(k) = rd->rdZ2();
+                op_array[4*i + j + 1] = new SpinlessVOperator(modelConfig, s, j, rd);
+            }
         }
         op_array[4*l] = new DenseOperator(expKhalf, 1.0);
     }
