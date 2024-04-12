@@ -43,43 +43,7 @@ class PfQMC {
     // after each sweep
     // the greens function g
     // is automatically updated
-    void sweep() {
-        MatType tmp, Aseg;
-        int curSeg = 0;
-        for(int i=0; i<op_length; i++) {
-            op_array->at(i)->update(g);
-            if (need_stabilization[(i+1) % op_length]) {
-                
-                // re-evaluate the UDT of current segment
-                Aseg = MatType::Identity(nDim, nDim);
-                for (int j = (i - stb + 1); (j<=i) && j<op_length; j++) {
-                    op_array->at(j)->left_multiply(Aseg, tmp);
-                    std::swap(Aseg, tmp);
-                }
-
-                delete udtR[curSeg];
-                udtR[curSeg] = new UDT(Aseg, nDim); // TODO: performance check
-
-                // re-evaluate the Green's function of next time slice
-                curSeg = (curSeg + 1) % checkpoints;
-
-                delete Al;
-                Al = new UDT(*udtR[curSeg]);
-                for (int k= curSeg + 1; k<checkpoints; k++) {
-                    udtR[k]->factorizedMultUpdate(*Al, nDim);
-                }
-                for (int k = 0; k<curSeg; k++) {
-                    udtR[k]->factorizedMultUpdate(*Al, nDim);
-                }
-                Al->onePlusInv(nDim, g);
-
-            } else {
-                // no need for stabilization
-                // direct propagate
-                op_array->at(i)->left_propagate(g, tmp);
-            }
-        }
-    }
+    void sweep();
 
     DataType getSign() {
         const MatType identity = MatType::Identity(nDim, nDim);

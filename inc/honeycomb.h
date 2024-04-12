@@ -108,6 +108,42 @@ public:
         }
     }
 
+    inline DataType energyFromGreensFunc(const MatType &g) {
+        DataType r = 0.0;
+        DataType tmp = (0.5i);
+        int idx1, idx2;
+        for (int i=0; i<Lx; i++) {
+            for (int j=0; j<Ly; j++) {
+                for (int k=0; k<2; k++) {
+                    idx1 = majoranaCoord2Idx(i, j, 0, k);
+                    idx2 = majoranaCoord2Idx(i, j, 1, k);
+                    r += tmp * g(idx1, idx2);
+                    idx2 = majoranaCoord2Idx((i+1) % Lx, j, 1, k);
+                    r += tmp * g(idx1, idx2);
+                    idx2 = majoranaCoord2Idx(i, (j+1) % Ly, 1, k);
+                    r += tmp * g(idx1, idx2);
+                }
+            }
+        }
+
+        int idxi1, idxi2, idxj1, idxj2;
+        tmp = (0.25) * V;
+        for (int i=0; i<Lx; i++) {
+            for (int j=0; j<Ly; j++) {
+                for (int btype=0; btype<3; btype++) {
+                    idxi1 = majoranaCoord2Idx(i, j, 0, 0); // i1
+                    idxi2 = majoranaCoord2Idx(i, j, 0, 1); // i2
+                    idxj1 = neighborSiteIdx(i, j, 0, btype); // j1
+                    idxj2 = neighborSiteIdx(i, j, 1, btype); // j2
+                    r += tmp * g(idxi1, idxj1) * g(idxi2, idxj2);
+                    r += tmp * g(idxi1, idxj2) * g(idxj1, idxi2);
+                    r -= tmp * g(idxi1, idxi2) * g(idxj1, idxj2);
+                }
+            }
+        }
+        return r;
+    }
+
     // Generate the H-S transformed Hamiltonian
     // in principle ONLY be used for testing
     inline void InteractionHGenerator(MatType &H, const iVecType &s, const int bondType) const {

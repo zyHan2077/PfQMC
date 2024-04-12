@@ -63,6 +63,8 @@ public:
     }
 
     inline int rdUniform01() {
+        // double r = rdDistUniform01(rdEng);
+        // return r;
         return rdDistUniform01(rdEng);
     }
 

@@ -28,6 +28,7 @@ public:
     virtual iVecType* getAuxField(){return NULL;};
     virtual int getType(){return -1;};
     virtual bool singleFlip(MatType &g, int idxCell, double rand) {return 0;};
+    virtual ~Operator() {};
 };
 
 class DenseOperator : public Operator

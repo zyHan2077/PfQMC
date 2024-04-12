@@ -37,7 +37,7 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
     // const DataType two = 2;
     const char mklNoTrans = 'N';
     DataType norm2, arg0, k, alpha;
-    DataType *x, *B, *subA;
+    DataType *x, *subA;
     double normx0, sqrtnorm2, normu;
     // DataType pfaffian = 1;
     int kcount = 0;

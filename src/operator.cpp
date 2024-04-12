@@ -2,8 +2,8 @@
 #include "honeycomb.h"
 
 SpinlessVOperator::SpinlessVOperator(const SpinlessTvHoneycombUtils* _config, iVecType* _s, int _bondType, rdGenerator* _rd)
-    :config(_config), bondType(_bondType), etaM(_config->etaM), 
-        nDim(config->nsites * 2), nUnitcell(config->nUnitcell) {
+    :config(_config), etaM(_config->etaM), nUnitcell(config->nUnitcell), 
+        bondType(_bondType), nDim(config->nsites * 2) {
 
     s = _s;
     rd = _rd;
@@ -36,7 +36,7 @@ bool SpinlessVOperator::singleFlip(MatType &g, int idxCell, double rand) {
     }
 
     bool flag = rand < std::abs(r);
-    // std::cout << "r = " << r << "\n";
+    // std::cout << rand << "=rand " << "r = " << r << "\n";
 
     if (flag) {
         for (int imaj = 0; imaj < 2; imaj ++) {
@@ -64,10 +64,16 @@ bool SpinlessVOperator::singleFlip(MatType &g, int idxCell, double rand) {
 }
 
 void SpinlessVOperator::update(MatType &g) {
+    double rand;
     for (int i=0; i<nUnitcell; i++) {
         // random real between (0, 1)
-        double rand = rd->rdUniform01();
+        rand = rd->rdUniform01();
         bool flag = singleFlip(g, i, rand);
+        // if (flag) {
+        //     std::cout << "o";
+        // } else {
+        //     std::cout << "-";
+        // }
     }
 }
 

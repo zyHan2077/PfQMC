@@ -1,16 +1,37 @@
 #include "inc/pfqmc.h"
 
 int main() {
-    
     mkl_set_num_threads(8);
 
-    int Lx = 9;
-    int Ly = 11;
-    int LTau = 20;
+    int Lx = 2;
+    int Ly = 2;
+    int LTau = 100;
     double dt = 0.1;
     double V = 0.7;
+    int stabilizationTime = 10;
+    int thermalLength = 200;
+    int evaluationLength = 1000;
 
-    int nDim = Lx * Ly * 4;
+    // int nDim = Lx * Ly * 4;
     SpinlessTvHoneycombUtils config(Lx, Ly, dt, V, LTau);
-    
+    rdGenerator rd(42);
+    Honeycomb_tV walker(&config, &rd);
+    PfQMC pfqmc(&walker, stabilizationTime);
+
+    for (int i = 0; i < thermalLength; i++) {
+        pfqmc.sweep();
+    }
+
+    DataType energy = 0.0;
+    DataType sign = 1.0;
+    for (int i=0; i<evaluationLength; i++) {
+        pfqmc.sweep();
+        // sign = pfqmc.getSign();
+        energy += sign * config.energyFromGreensFunc(pfqmc.g);
+
+        if((i%10) == 0) std::cout << "iter = " << i << " energy=" << energy / double(i+1) << "\n";
+    }
+    // std::cout << pfqmc.g << "\n";
+
+    return 0;
 }

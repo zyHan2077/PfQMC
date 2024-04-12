@@ -346,3 +346,29 @@ TEST(PFQMC, GetSignTest) {
     EXPECT_NEAR(std::abs(s-1.0), 0.0, 1e-10);
 }
 
+TEST(PFQMC, udtRTest) {
+    mkl_set_num_threads(8);
+
+    int Lx = 2;
+    int Ly = 2;
+    int LTau = 10;
+    int hamiltonianDim = Lx * Ly * 4;
+    const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
+    SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, LTau);
+    rdGenerator rd(114514);
+    Honeycomb_tV walker(&config, &rd);
+    PfQMC pfqmc(&walker, 10);
+
+    int thermalLength = 1000;
+
+    for (int i = 0; i < thermalLength; i++) {
+        pfqmc.sweep();
+    }
+
+    MatType A = identity;
+    for (int i = 0; i < pfqmc.op_length; i++) {
+        walker.op_array[i]->left_multiply(A, A);
+    }
+    MatType gBrutal = 2.0 * (identity + A).inverse();
+    EXPECT_NEAR((gBrutal - pfqmc.g).squaredNorm(), 0.0, 1e-10);
+}

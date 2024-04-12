@@ -25,12 +25,15 @@ find_package(GTest CONFIG REQUIRED)
 set(CMAKE_CXX_COMPILER "icpx")
 set(CMAKE_C_LINK)
 set(FP_MODEL_FLAGS "-fp-model=precise -fimf-arch-consistency=true -no-fma")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${FP_MODEL_FLAGS}")
 
-# add_executable(main ./main.cpp ${SRC_LIST})
-# target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
-# target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-# target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
+set(WARNING_FLAGS "-Wall")
+
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${FP_MODEL_FLAGS} ${WARNING_FLAGS}")
+
+add_executable(main ./main.cpp ${SRC_LIST})
+target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
 
 # target_link_libraries(main_test GTest::gtest_main)
 add_executable(main_test ./main_test.cpp ${SRC_LIST})
