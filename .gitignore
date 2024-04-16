@@ -2,3 +2,5 @@ build/
 .vscode/
 *.bak
 .ipynb*
+obj/
+bin/
