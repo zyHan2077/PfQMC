@@ -8,3 +8,10 @@ usage:
 mkdir build && cd build
 cmake .. -DEIGEN3_INCLUDE_DIR=/path/to/eigen3 & make
 ```
+
+or:
+
+```bash
+mkdir obj && mkdir bin
+make EIGEN3_INCLUDE_DIR=/path/to/eigen3
+```
