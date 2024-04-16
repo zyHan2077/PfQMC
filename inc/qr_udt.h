@@ -50,6 +50,7 @@ public:
             D = std::move(other.D);
             T = std::move(other.T);
         }
+        return (*this);
     }
 
     UDT(UDT &&other)

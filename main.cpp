@@ -1,4 +1,4 @@
-#include "pfqmc.h"
+#include "inc/pfqmc.h"
 #include <omp.h>
 int main()
 {
