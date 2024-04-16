@@ -18,17 +18,18 @@ public:
     virtual void inv_right_multiply(const MatType &A, MatType &B){};
     virtual void adjoint_inv_right_multiply(const MatType &A, MatType &B){};
     virtual void left_propagate(MatType &A, MatType &B){};
+    virtual void right_propagate(MatType &A, MatType &B){};
     virtual void update(MatType &g){};
-    virtual DataType getSign() {return 1.0;};
-    virtual void getGreensMat(MatType &g0) {};
+    virtual DataType getSign() { return 1.0; };
+    virtual void getGreensMat(MatType &g0){};
 
     // F = B * F
-    virtual void stabilizedLeftMultiply(UDT& F) {};
+    virtual void stabilizedLeftMultiply(UDT &F){};
 
-    virtual iVecType* getAuxField(){return NULL;};
-    virtual int getType(){return -1;};
-    virtual bool singleFlip(MatType &g, int idxCell, double rand) {return 0;};
-    virtual ~Operator() {};
+    virtual iVecType *getAuxField() { return NULL; };
+    virtual int getType() { return -1; };
+    virtual bool singleFlip(MatType &g, int idxCell, double rand) { return 0; };
+    virtual ~Operator(){};
 };
 
 class DenseOperator : public Operator
@@ -47,9 +48,9 @@ public:
         mat = mat_;
         mat_inv = mat_.inverse();
         sign = _s;
-        
+
         int nDim = mat.cols();
-        g0 = (MatType::Identity(nDim, nDim)+mat).inverse() * 2.0 - MatType::Identity(nDim, nDim);
+        g0 = (MatType::Identity(nDim, nDim) + mat).inverse() * 2.0 - MatType::Identity(nDim, nDim);
     }
 
     void left_multiply(const MatType &A, MatType &B) override
@@ -81,16 +82,26 @@ public:
         B = mat * A;
         A = B * mat_inv;
     }
-    DataType getSign() override {
+
+    void right_propagate(MatType &A, MatType &B) override
+    {
+        B = mat_inv * A;
+        A = B * mat;
+    }
+    DataType getSign() override
+    {
         return sign;
     }
 
-    void getGreensMat(MatType &g) override {
+    void getGreensMat(MatType &g) override
+    {
         g = g0;
     }
 
-    void stabilizedLeftMultiply(UDT& F) override {
-        F.bMultUpdate(mat, mat.cols());
+    void stabilizedLeftMultiply(UDT &F) override
+    {
+        F = mat * F;
+        // F.bMultUpdate(mat);
     }
 };
 
@@ -99,23 +110,23 @@ class SpinlessTvHoneycombUtils;
 class SpinlessVOperator : public Operator
 {
 private:
-    const SpinlessTvHoneycombUtils* config;
+    const SpinlessTvHoneycombUtils *config;
     const double etaM;
     // delayed update for spinless t-V requires additional diagonalization
-    // const int delay_max = 32; 
+    // const int delay_max = 32;
     // cannot be larger than 64 (unless you change the threads value in kernel_linalg.cpp)
 public:
     const int nUnitcell;
     const int bondType;
     // const int Naux; // number of auxillary fields (live on bonds)
     const int nDim; // dimension of hamiltonian, number of sites × 2 (number of majorana species)
-    iVecType* s;
+    iVecType *s;
     MatType B;
     MatType B_inv;
-    rdGenerator* rd;
+    rdGenerator *rd;
 
     // _s: aux fields, Z_2 variable, length = nUnitcell
-    SpinlessVOperator(const SpinlessTvHoneycombUtils* _config, iVecType* _s, int _bondType, rdGenerator* _rd);
+    SpinlessVOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd);
 
     ~SpinlessVOperator() override;
 
@@ -138,19 +149,29 @@ public:
         gTmp = B * g;
         g = gTmp * B_inv;
     }
+    void right_propagate(MatType &g, MatType &gTmp) override
+    {
+        reCalcInv();
+        gTmp = B_inv * g;
+        g = gTmp * B;
+    }
 
-    iVecType* getAuxField() override {
+    iVecType *getAuxField() override
+    {
         return s;
     }
 
-    int getType() override {
+    int getType() override
+    {
         return bondType;
     }
 
-    void getGreensMat(MatType& g) override;
+    void getGreensMat(MatType &g) override;
 
-    void stabilizedLeftMultiply(UDT& F) override {
-        F.bMultUpdate(B, nDim);
+    void stabilizedLeftMultiply(UDT &F) override
+    {
+        // F.bMultUpdate(B);
+        F = B * F;
     }
 };
 

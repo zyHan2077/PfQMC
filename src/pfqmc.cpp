@@ -1,66 +1,114 @@
 #include "pfqmc.h"
 
-PfQMC::PfQMC(Honeycomb_tV *walker, int _stb) {
+PfQMC::PfQMC(Honeycomb_tV *walker, int _stb)
+{
     stb = _stb;
     nDim = (walker->nSites) * 2;
     g = MatType::Identity(nDim, nDim);
-    op_array = &(walker->op_array);
-    op_length = op_array->size();
-
+    op_array = walker->op_array;
+    op_length = op_array.size();
     need_stabilization = std::vector<bool>(op_length);
     checkpoints = 0;
-    bool flag;
-
     // if a checkpoint is reached
     // stabilized Green's function is re-evaluated
-    for (int i = 0; i < op_length; i++) {
-        flag = ((i % stb) == 0);
-        need_stabilization[i] = flag;
-        if (flag) {
+    for (int l = 0; l < op_length; l++)
+    {
+        bool flag = ((l % stb) == 0);
+        need_stabilization[l] = flag;
+        if (flag)
+        {
             checkpoints++;
         }
     }
-    udtR = std::vector<UDT*>(checkpoints);
+    udtL = std::vector<UDT>(checkpoints);
+    udtR = std::vector<UDT>(checkpoints);
+    leftInit();
     rightInit();
 }
 
-void PfQMC::sweep() {
-    MatType tmp, Aseg;
+void PfQMC::rightSweep()
+{
+    MatType tmp = MatType::Identity(nDim, nDim);
+    MatType Aseg = MatType::Identity(nDim, nDim);
     int curSeg = 0;
-    int j;
-    for(int i=0; i<op_length; i++) {
-        op_array->at(i)->update(g);
-        if (need_stabilization[(i+1) % op_length]) {
+    for (int l = 0; l < op_length; l++)
+    {
+        op_array[l]->update(g);
+        op_array[l]->left_multiply(Aseg, tmp);
+        std::swap(Aseg, tmp);
+        //%op_length is important, cannot be remove. or else the last segment will not be calculated
+        if (need_stabilization[(l + 1) % op_length])
+        {
+            // auto g2 = g;
+            // op_array[i]->left_propagate(g2, tmp);
             // re-evaluate the UDT of current segment
+            if (curSeg == 0)
+            {
+                udtR[curSeg] = UDT(Aseg); // TODO: performance check
+            }
+            else
+            {
+                udtR[curSeg] = Aseg * udtR[curSeg - 1];
+            }
             Aseg = MatType::Identity(nDim, nDim);
-            for (j = i; !need_stabilization[j]; j--) {
-                op_array->at(j)->right_multiply(Aseg, tmp);
-                std::swap(Aseg, tmp);
-            }
-            op_array->at(j)->right_multiply(Aseg, tmp);
-            std::swap(Aseg, tmp);
-
-            delete udtR[curSeg];
-            udtR[curSeg] = new UDT(Aseg, nDim); // TODO: performance check
-
             // re-evaluate the Green's function of next time slice
-            curSeg = (curSeg + 1) % checkpoints;
-            // std::cout << i << "=i, " << curSeg << "=curSeg \n";
-
-            delete Al;
-            Al = new UDT(*udtR[curSeg]);
-            for (int k= curSeg + 1; k<checkpoints; k++) {
-                udtR[k]->factorizedMultUpdate(*Al, nDim);
+            if (curSeg == (checkpoints - 1))
+            {
+                udtR[curSeg].onePlusInv(g);
             }
-            for (int k = 0; k<curSeg; k++) {
-                udtR[k]->factorizedMultUpdate(*Al, nDim);
+            else
+            {
+                g = onePlusInv(udtL[curSeg + 1], udtR[curSeg]);
             }
-            Al->onePlusInv(nDim, g);
-
-        } else {
+            // std::cout<<"right g recal "<<(g2-g).norm()<<std::endl;
+            curSeg++;
+        }
+        else
+        {
             // no need for stabilization
             // direct propagate
-            op_array->at(i)->left_propagate(g, tmp);
+            op_array[l]->left_propagate(g, tmp);
+        }
+    }
+}
+
+void PfQMC::leftSweep()
+{
+    MatType tmp = MatType::Identity(nDim, nDim);
+    MatType Aseg = MatType::Identity(nDim, nDim);
+    int curSeg = checkpoints - 1;
+    for (int l = op_length - 1; l > -1; l--)
+    {
+        op_array[l]->right_propagate(g, tmp);
+        op_array[l]->update(g);
+        op_array[l]->right_multiply(Aseg, tmp);
+        std::swap(Aseg, tmp);
+        if (need_stabilization[l])
+        {
+            // auto g2 = g;
+            Aseg.adjointInPlace();
+            // re-evaluate the UDT of current segment
+            if (curSeg == (checkpoints - 1))
+            {
+                udtL[curSeg] = UDT(Aseg); // TODO: performance check
+            }
+            else
+            {
+                udtL[curSeg] = Aseg * udtL[curSeg + 1];
+            }
+            Aseg = MatType::Identity(nDim, nDim);
+            // re-evaluate the Green's function of next time slice
+            if (curSeg == 0)
+            {
+                udtL[curSeg].onePlusInv(g);
+                g.adjointInPlace();
+            }
+            else
+            {
+                g = onePlusInv(udtL[curSeg], udtR[curSeg - 1]);
+            }
+            curSeg--;
+            // std::cout<<"left g recal "<<(g2-g).norm()<<std::endl;
         }
     }
 }
