@@ -1,8 +1,8 @@
 # Compiler
-CC = mpiicpc -mkl -O2 -xCORE-AVX512
+CC = mpiicpx -mkl -O2 -xCORE-AVX512
 
 # Flags
-CFLAGS = -std=c++17 -I /DATA.c9/wanzhouquan/V-PQMC/cPQMC/eigen-3.4.0
+CFLAGS = -std=c++17 -I $(EIGEN3_INCLUDE_DIR)
 
 # Source directories
 SRC_DIR = src
@@ -20,9 +20,12 @@ OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 		$(CC) $(CFLAGS) -c $< -o $@ -I $(INC_DIR)
 
+$(OBJ_DIR)/main.o:
+		$(CC) $(CFLAGS) -c main.cpp -o $@ -I $(INC_DIR)
+
 # Compile and link
-main: $(OBJS)
-		$(CC) $(CFLAGS) $(OBJS) -o $@ 
+main: $(OBJS) $(OBJ_DIR)/main.o
+		$(CC) $(CFLAGS) $(OBJS) $(OBJ_DIR)/main.o -o $@ 
 
 .PHONY: clean
 

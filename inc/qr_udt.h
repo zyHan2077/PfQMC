@@ -58,7 +58,7 @@ public:
     }
 
     // use qr to get UDT decomposition
-    UDT(MatType &A)
+    explicit UDT(MatType &A)
     {
         nDim = A.rows();
         T = MatType::Zero(nDim, nDim);

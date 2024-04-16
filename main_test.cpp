@@ -288,14 +288,15 @@ TEST(QR_Factorization, UDT_Decomposition) {
     // std::cout << "A=\n" << A << "\n";
     MatType A1copy = A1;
     MatType A2copy = A2;
-    UDT F1(A1, nDim);
+    UDT F1(A1);
     // std::cout << "Aafter=\n" << A << "\n";
     EXPECT_NE(A1.data(), A1copy.data());
 
     EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - A1copy).squaredNorm(), 0.0, 1e-20);
 
-    UDT F2(A2, nDim);
-    F1.factorizedMultUpdate(F2, nDim);
+    UDT F2(A2);
+    F2 = F1 * F2;
+    // F1.factorizedMultUpdate(F2, nDim);
     double r = ((F2.U * F2.D.asDiagonal() * F2.T) - (A1copy * A2copy)).squaredNorm();
     // std::cout << "r=" << r << "\n";
     EXPECT_NEAR(r, 0.0, 1e-18);
@@ -304,7 +305,7 @@ TEST(QR_Factorization, UDT_Decomposition) {
     MatType g;
     MatType gBrutal = MatType::Identity(nDim, nDim);
     gBrutal = (gBrutal + ((F2.U * F2.D.asDiagonal()) * F2.T)).inverse() * 2.0;
-    F2.onePlusInv(nDim, g);
+    F2.onePlusInv(g);
     // std::cout << g << "\n====\n";
     // std::cout << gBrutal << "\n";
     // std::cout << (g - gBrutal).squaredNorm() << "\n";
@@ -320,12 +321,13 @@ TEST(QR_Factorization, BMult) {
                 MatType::Identity(nDim, nDim)).squaredNorm(), 0.0, 
                 1e-20);
     MatType A1copy = A1;
-    UDT F1(A1, nDim);
+    UDT F1(A1);
     EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - A1copy).squaredNorm(), 0.0, 1e-20);
 
     MatType A2 = MatType::Random(nDim, nDim);
     // A2 = MatType::Identity(nDim, nDim);
-    F1.bMultUpdate(A2, nDim);
+    F1 = A2 * F1;
+    // F1.bMultUpdate(A2);
     EXPECT_NEAR(((F1.U * F1.D.asDiagonal() * F1.T) - (A2 * A1copy)).squaredNorm(), 0.0, 1e-20);
 }
 
@@ -362,7 +364,7 @@ TEST(PFQMC, udtRTest) {
     int thermalLength = 1000;
 
     for (int i = 0; i < thermalLength; i++) {
-        pfqmc.sweep();
+        pfqmc.leftSweep();
     }
 
     MatType A = identity;
