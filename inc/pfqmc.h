@@ -79,35 +79,13 @@ public:
     void rightSweep();
     void leftSweep();
 
-    DataType getSign()
-    {
-        const MatType identity = MatType::Identity(nDim, nDim);
-        const DataType extraSign = ((nDim / 2) % 2 == 0) ? 1.0 : -1.0;
-        UDT A(nDim);
-        op_array[0]->stabilizedLeftMultiply(A);
-        MatType gNext, gCur;
-        DataType signCur, signNext, signPfaf;
-        signCur = op_array[0]->getSign();
-        A.onePlusInv(gCur);
-        gCur -= identity;
-        for (int i = 1; i < op_length; i++)
-        {
-            op_array[i]->getGreensMat(gNext);
-            signNext = op_array[i]->getSign();
-            // std::cout << gNext << "==== gnext ====\n \n";
-            // std::cout << gCur << "==== gcur ====\n \n";
-            signPfaf = pfaffianForSignOfProduct(gNext, gCur);
-            signCur = (signCur * signNext * signPfaf * extraSign);
+    // get sign by computing the pfaffian of
+    // a 4N * 4N matrix, for testing purpose
+    DataType getSignRaw();
 
-            // std::cout << signCur << " sign cur\n";
-            if (i == op_length - 1)
-                break;
-            op_array[i]->stabilizedLeftMultiply(A);
-            A.onePlusInv(gCur);
-            gCur -= identity;
-        }
-        return signCur;
-    }
+    // should provide same result as getSignRaw
+    // but by computing the pfaffian of a 2N * 2N matrix
+    DataType getSign();
     
     // ~PfQMC()
     // {

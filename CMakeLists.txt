@@ -13,6 +13,7 @@ set(SRC_LIST src/skewMatUtils.cpp src/operator.cpp src/pfqmc.cpp)
 
 set(MKL_INTERFACE lp64)
 
+set(MKL_ROOT $ENV{MKLROOT})
 enable_testing()
 find_package(MKL CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)

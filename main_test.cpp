@@ -343,7 +343,7 @@ TEST(PFQMC, GetSignTest) {
     rdGenerator rd(114514);
     Honeycomb_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, 10);
-    DataType s = pfqmc.getSign();
+    DataType s = pfqmc.getSignRaw();
     // std::cout << s << "\n";
     EXPECT_NEAR(std::abs(s-1.0), 0.0, 1e-10);
 }
