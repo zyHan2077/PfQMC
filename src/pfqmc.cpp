@@ -121,16 +121,17 @@ DataType PfQMC::getSignRaw()
     op_array[0]->stabilizedLeftMultiply(A);
     MatType gNext, gCur;
     DataType signCur, signNext, signPfaf;
-    signCur = op_array[0]->getSign();
+    signCur = op_array[0]->getSignOfWeight();
     A.onePlusInv(gCur);
     gCur -= identity;
     for (int i = 1; i < op_length; i++)
     {
         op_array[i]->getGreensMat(gNext);
-        signNext = op_array[i]->getSign();
+        signNext = op_array[i]->getSignOfWeight();
         // std::cout << gNext << "==== gnext ====\n \n";
         // std::cout << gCur << "==== gcur ====\n \n";
         signPfaf = pfaffianForSignOfProduct(gNext, gCur);
+        // std::cout << "Raw sCur, sNext, sPfaf=" << signCur << " " << signNext << " " << signPfaf << "\n"; 
         signCur = (signCur * signNext * signPfaf * extraSign);
 
         // std::cout << signCur << " sign cur\n";
@@ -144,6 +145,36 @@ DataType PfQMC::getSignRaw()
 }
 
 DataType PfQMC::getSign() {
-    //to be implemented
-    return 1.0;
+    //TODO: to be implemented
+    const MatType identity = MatType::Identity(nDim, nDim);
+    UDT A(nDim);
+    op_array[0]->stabilizedLeftMultiply(A);
+    MatType gNext, gCur, gInv, gTemp, t;
+    DataType signCur, signNext, signPfaf;
+    signCur = op_array[0]->getSignOfWeight();
+    A.onePlusInv(gCur);
+    gCur -= identity;
+    for (int i = 1; i < op_length; i++)
+    {
+        op_array[i]->getGreensMat(gNext);
+        op_array[i]->getGreensMatInv(gInv);
+        MatType t = gNext * gInv;
+        // std::cout << (t - identity).squaredNorm() << "gNext * gInv, bType" << op_array[i]->getType()<<  " \n";
+        // EXPECT_NEAR(, 0.0, 1e-10);
+        signNext = op_array[i]->getSignOfWeight();
+        // std::cout << gNext << "==== gnext ====\n \n";
+        // std::cout << gCur << "==== gcur ====\n \n";
+        gTemp = gInv + gCur;
+        signPfaf = signOfPfaf(gTemp) / op_array[i]->getSignPfGInv();
+        // signPfaf = 1.0;
+        // std::cout << "sCur, sNext, sPfaf=" << signCur << " " << signNext << " " << signPfaf << "\n"; 
+        signCur = (signCur * signNext * signPfaf);
+        // std::cout << signCur << " sign cur\n";
+        if (i == op_length - 1)
+            break;
+        op_array[i]->stabilizedLeftMultiply(A);
+        A.onePlusInv(gCur);
+        gCur -= identity;
+    }
+    return signCur;
 }

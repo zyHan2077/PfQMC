@@ -165,8 +165,11 @@ public:
     }
 
     // Generate the Greens function for single slice
-    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType) const {
+    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const {
         DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
+        if (inv) {
+            tmp = (-1.0) / tmp;
+        }
 
         int idx1, idx2, idUnitcell;
         for (int i=0; i<Lx; i++) {

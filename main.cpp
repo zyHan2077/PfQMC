@@ -3,7 +3,8 @@
 int main()
 {
     double start_time = omp_get_wtime();
-    mkl_set_num_threads(4);
+    mkl_set_num_threads(8);
+
     int Lx = 2;
     int Ly = 2;
     int LTau = 100;
@@ -31,7 +32,7 @@ int main()
     {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
-        // sign = pfqmc.getSign();
+        sign = pfqmc.getSign();
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
 
         if ((i % 10) == 0)

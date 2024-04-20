@@ -31,6 +31,8 @@ inline MatType expm(MatType &H, double lambda)
 // should only be used for testing
 void generateMatForEta(const MatType& H, MatType& A);
 
+// note that this calculation happens in place
+DataType signOfPfaf(MatType& A);
 DataType pfaffianForEta(const MatType &H);
 DataType pfaffianForSignOfEta(const MatType &H);
 DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2);

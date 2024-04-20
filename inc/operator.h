@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "qr_udt.h"
+#include "skewMatUtils.h"
 
 class Operator
 {
@@ -20,8 +21,11 @@ public:
     virtual void left_propagate(MatType &A, MatType &B){};
     virtual void right_propagate(MatType &A, MatType &B){};
     virtual void update(MatType &g){};
-    virtual DataType getSign() { return 1.0; };
+    virtual DataType getSignOfWeight() { return 1.0; };
+    virtual inline DataType getSignPfGInv() { return 1.0; };
+    virtual DataType signOfUpdatedWeight(const MatType& g) {return 1.0; };
     virtual void getGreensMat(MatType &g0){};
+    virtual void getGreensMatInv(MatType& g) {};
 
     // F = B * F
     virtual void stabilizedLeftMultiply(UDT &F){};
@@ -38,7 +42,9 @@ public:
     MatType mat;
     MatType mat_inv;
     MatType g0;
-    DataType sign;
+    MatType g0_inv;
+    DataType signPf_g0_inv;
+    DataType signOfWeight;
     DenseOperator(const MatType &mat_, DataType _s)
     {
         // this->N = Mat.rows();
@@ -47,10 +53,13 @@ public:
         // this->para = &mat;
         mat = mat_;
         mat_inv = mat_.inverse();
-        sign = _s;
+        signOfWeight = _s;
 
         int nDim = mat.cols();
         g0 = (MatType::Identity(nDim, nDim) + mat).inverse() * 2.0 - MatType::Identity(nDim, nDim);
+        g0_inv = g0.inverse();
+        MatType tmp = g0_inv;
+        signPf_g0_inv = signOfPfaf(tmp);
     }
 
     void left_multiply(const MatType &A, MatType &B) override
@@ -88,14 +97,23 @@ public:
         B = mat_inv * A;
         A = B * mat;
     }
-    DataType getSign() override
+    DataType getSignOfWeight() override
     {
-        return sign;
+        return signOfWeight;
+    }
+
+    inline DataType getSignPfGInv() override {
+        return signPf_g0_inv;
     }
 
     void getGreensMat(MatType &g) override
     {
         g = g0;
+    }
+
+    void getGreensMatInv(MatType &g) override
+    {
+        g = g0_inv;
     }
 
     void stabilizedLeftMultiply(UDT &F) override
@@ -167,6 +185,8 @@ public:
     }
 
     void getGreensMat(MatType &g) override;
+    void getGreensMatInv(MatType& g) override;
+    inline DataType getSignPfGInv() override;
 
     void stabilizedLeftMultiply(UDT &F) override
     {

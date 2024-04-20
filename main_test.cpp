@@ -334,17 +334,19 @@ TEST(QR_Factorization, BMult) {
 TEST(PFQMC, GetSignTest) {
     mkl_set_num_threads(8);
 
-    int Lx = 10;
-    int Ly = 10;
-    int LTau = 10;
+    int Lx = 11;
+    int Ly = 9;
+    int LTau = 9;
     int hamiltonianDim = Lx * Ly * 4;
     const MatType identity = MatType::Identity(hamiltonianDim, hamiltonianDim);
     SpinlessTvHoneycombUtils config(Lx, Ly, 0.1, 0.7, LTau);
-    rdGenerator rd(114514);
+    rdGenerator rd(42);
     Honeycomb_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, 10);
-    DataType s = pfqmc.getSignRaw();
+    DataType sRaw = pfqmc.getSignRaw();
     // std::cout << s << "\n";
+    DataType s = pfqmc.getSign();
+    EXPECT_NEAR(std::abs(sRaw-1.0), 0.0, 1e-10);
     EXPECT_NEAR(std::abs(s-1.0), 0.0, 1e-10);
 }
 

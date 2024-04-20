@@ -87,5 +87,21 @@ void SpinlessVOperator::right_multiply(const MatType &AIn, MatType &AOut) {
 
 void SpinlessVOperator::getGreensMat(MatType& g){
     g = MatType::Zero(nDim, nDim);
-    config->InteractionTanhGenerator(g, *s, bondType);
+    config->InteractionTanhGenerator(g, *s, bondType, false);
+}
+
+void SpinlessVOperator::getGreensMatInv(MatType& g){
+    g = MatType::Zero(nDim, nDim);
+    config->InteractionTanhGenerator(g, *s, bondType, true);
+}
+
+inline DataType SpinlessVOperator::getSignPfGInv() {
+    // MatType g;
+    // this->getGreensMatInv(g);
+    // // std::cout << g << "=g \n";
+    // DataType s = signOfPfaf(g);
+    // std::cout << "sign of gInv = " << s << "type=" << bondType << "\n";
+    // return s;
+    // for spinless V, this is always 1
+    return 1.0;
 }

@@ -52,7 +52,7 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
         // std::cout << "sqrtnorm=" << sqrtnorm2 << "\n";
 
         // in the case norm2 = 0, pfaffian is just 0
-        if (norm2.real() < thresholdDBL) {
+        if ((i%2 == 0) && (norm2.real() < thresholdDBL)) {
             // pfaffian = 0;
             kVec[kcount] = 0;
             // std::cout << "pfaffian zero\n";
@@ -115,12 +115,15 @@ DataType pfaf(const int N, MatType& A) {
     return r;
 }
 
-DataType signOfPfaf(const int N, MatType& A) {
+DataType signOfPfaf(MatType& A) {
+    const int N = (A.cols() / 2);
     DataType r = 1.0;
     cVecType kVec = cVecType::Zero(N);
     cVecType temp(4*N);
-    SkewMatHouseholder_PureMKL(N, A.data(), temp.data(), kVec.data());
+    MatType B = A;
+    SkewMatHouseholder_PureMKL(N, B.data(), temp.data(), kVec.data());
     for(int i=0; i<N; i++) {
+        // std::cout << "kVec i=" << i << " " << kVec(i) << "\n";
         if (kVec(i) == 0.0) return 0.0; // TODO: DBL check?
         r *= kVec(i) / std::abs(kVec(i));
     }
@@ -171,7 +174,7 @@ void generateMatForEta(const MatType& H, MatType& A) {
     generateMatForEta(H, A);
 
     // cVecType tmp(8*n);
-    DataType r = signOfPfaf(2*n, A);
+    DataType r = signOfPfaf(A);
     if (n%2 == 1) r = -r;
     return r;
 }
@@ -184,6 +187,6 @@ DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2) {
     A.block(0, 2*n, 2*n, 2*n) = - MatType::Identity(2*n, 2*n);
     A.block(2*n, 0, 2*n, 2*n) = MatType::Identity(2*n, 2*n);
 
-    DataType r = signOfPfaf(2*n, A);
+    DataType r = signOfPfaf(A);
     return r;
 }
