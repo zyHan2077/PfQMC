@@ -258,13 +258,6 @@ public:
         }
         op_array[4*l] = new DenseOperator(expKhalf, 1.0);
     }
-
-    ~Honeycomb_tV() {
-        for (int i=0; i<4*l+1; i++) {
-            delete op_array[i];
-        }
-    }
-    
 };
 
 #endif

@@ -227,6 +227,11 @@ class Spinless_tV {
 public:
     std::vector<Operator *> op_array;
     int nDim;
+    ~Spinless_tV() {
+        for(int i=0; i<op_array.size(); i++) {
+            delete op_array[i];
+        }
+    }
 };
 
 #endif

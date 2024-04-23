@@ -165,12 +165,6 @@ class Square_tV : public Spinless_tV {
         }
         op_array[5 * l] = new DenseOperator(expKhalf, 1.0);
     }
-
-    ~Square_tV() {
-        for (int i = 0; i < 5 * l + 1; i++) {
-            delete op_array[i];
-        }
-    }
 };
 
 #endif
