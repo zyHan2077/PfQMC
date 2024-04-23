@@ -67,6 +67,12 @@ public:
         return s;
     }
 
+    inline void aux2MajoranaIdx(int idAux, int imaj, int bType, int& idx1, int& idx2) const override {
+        SpinlessTvHoneycombUtils::majoranaCoord m = idxCell2Coord(idAux);
+        idx1 = majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
+        idx2 = neighborSiteIdx(m.ix, m.iy, imaj, bType);
+    }
+
     inline void KineticGenerator(MatType &H, DataType t) const {
         H.setZero();
         int idx1, idx2;
@@ -145,76 +151,70 @@ public:
         }
     }
 
-    // Generate the Greens function for single slice
-    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const override {
-        DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
-        if (inv) {
-            tmp = (-1.0) / tmp;
-        }
+    // // Generate the Greens function for single slice
+    // inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const override {
+    //     DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
+    //     if (inv) {
+    //         tmp = (-1.0) / tmp;
+    //     }
 
-        int idx1, idx2, idUnitcell;
-        for (int i=0; i<Lx; i++) {
-            for (int j=0; j<Ly; j++) {
-                idUnitcell = unitCellCoord2Idx(i, j);
-                for (int k=0; k<2; k++) {
-                    idx1 = majoranaCoord2Idx(i, j, 0, k);
-                    idx2 = neighborSiteIdx(i, j, k, bondType);
-                    // std::cout << idx1 << " " << idx2 << "\n";
-                    H(idx1, idx2) += -tmp * double(s(idUnitcell));
-                    H(idx2, idx1) += +tmp * double(s(idUnitcell));
-                }
-            }
-        }
-    }
+    //     int idx1, idx2, idUnitcell;
+    //     for (int i=0; i<Lx; i++) {
+    //         for (int j=0; j<Ly; j++) {
+    //             idUnitcell = unitCellCoord2Idx(i, j);
+    //             for (int k=0; k<2; k++) {
+    //                 idx1 = majoranaCoord2Idx(i, j, 0, k);
+    //                 idx2 = neighborSiteIdx(i, j, k, bondType);
+    //                 // std::cout << idx1 << " " << idx2 << "\n";
+    //                 H(idx1, idx2) += -tmp * double(s(idUnitcell));
+    //                 H(idx2, idx1) += +tmp * double(s(idUnitcell));
+    //             }
+    //         }
+    //     }
+    // }
 
     // Directly generate B by directly writing each 2*2 block
     // B should be initialized as Identity
-    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const override {
-        DataType ch = chlV;
-        DataType ish = (1.0i) * shlV;
-        if (inv) ish = -ish;
+    // inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const override {
+    //     DataType ch = chlV;
+    //     DataType ish = (1.0i) * shlV;
+    //     if (inv) ish = -ish;
 
-        int idx1, idx2, idUnitcell;
-        for (int i=0; i<Lx; i++) {
-            for (int j=0; j<Ly; j++) {
-                idUnitcell = unitCellCoord2Idx(i, j);
-                for (int k=0; k<2; k++) {
-                    idx1 = majoranaCoord2Idx(i, j, 0, k);
-                    idx2 = neighborSiteIdx(i, j, k, bondType);
-                    // std::cout << "(" << idx1 << "," << idx2 << "\n";
-                    //  |   \cosh(\lambda)           ,  -i \sinh(\lambda) \sigma |
-                    //  |  +i \sinh(\lambda) \sigma  ,   \cosh(\lambda)          |
-                    B(idx1, idx1) = ch;
-                    B(idx2, idx2) = ch;
-                    B(idx1, idx2) = +ish * double(s(idUnitcell));
-                    B(idx2, idx1) = -ish * double(s(idUnitcell));
-                }
-            }
-        }
-    }
+    //     int idx1, idx2, idUnitcell;
+    //     for (int i=0; i<Lx; i++) {
+    //         for (int j=0; j<Ly; j++) {
+    //             idUnitcell = unitCellCoord2Idx(i, j);
+    //             for (int k=0; k<2; k++) {
+    //                 idx1 = majoranaCoord2Idx(i, j, 0, k);
+    //                 idx2 = neighborSiteIdx(i, j, k, bondType);
+    //                 // std::cout << "(" << idx1 << "," << idx2 << "\n";
+    //                 //  |   \cosh(\lambda)           ,  -i \sinh(\lambda) \sigma |
+    //                 //  |  +i \sinh(\lambda) \sigma  ,   \cosh(\lambda)          |
+    //                 B(idx1, idx1) = ch;
+    //                 B(idx2, idx2) = ch;
+    //                 B(idx1, idx2) = +ish * double(s(idUnitcell));
+    //                 B(idx2, idx1) = -ish * double(s(idUnitcell));
+    //             }
+    //         }
+    //     }
+    // }
 };
 
 // class SpinlessTvHoneycombUtils;
 
-class SpinlessVHoneycombOperator : public SpinlessVOperator
-{
-public:
-    // _s: aux fields, Z_2 variable, length = nUnitcell
-    const SpinlessTvHoneycombUtils *mConfig;
-    const int nUnitcell;
+// class SpinlessVHoneycombOperator : public SpinlessVOperator
+// {
+// public:
+//     // _s: aux fields, Z_2 variable, length = nUnitcell
+//     const SpinlessTvHoneycombUtils *mConfig;
+//     const int nUnitcell;
 
-    SpinlessVHoneycombOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd)
-        :SpinlessVOperator(_config, _s, _bondType, _rd), mConfig(_config), nUnitcell(mConfig->nUnitcell) {
-    }
+//     SpinlessVHoneycombOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd)
+//         :SpinlessVOperator(_config, _s, _bondType, _rd), mConfig(_config), nUnitcell(mConfig->nUnitcell) {
+//     }
 
-    // ~SpinlessVHoneycombOperator() override;
-
-    void aux2MajoranaIdx(int idAux, int imaj, int& idx1, int& idx2) override {
-        SpinlessTvHoneycombUtils::majoranaCoord m = mConfig->idxCell2Coord(idAux);
-        idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
-        idx2 = mConfig->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
-    }
-};
+//     // ~SpinlessVHoneycombOperator() override;
+// };
 
 
 class Honeycomb_tV: public Spinless_tV
@@ -253,7 +253,7 @@ public:
             for (int j=0; j<3; j++) {
                 s = new iVecType(nUnitcell);
                 for (int k=0; k<nUnitcell; k++) (*s)(k) = rd->rdZ2();
-                op_array[4*i + j + 1] = new SpinlessVHoneycombOperator(modelConfig, s, j, rd);
+                op_array[4*i + j + 1] = new SpinlessVOperator(modelConfig, s, j, rd);
             }
         }
         op_array[4*l] = new DenseOperator(expKhalf, 1.0);

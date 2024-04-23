@@ -20,12 +20,15 @@ make EIGEN3_INCLUDE_DIR=/path/to/eigen3
 
 ```mermaid
   graph LR;
-    SpinlessTvUtils--inherited by-->SpinlessTvSquareUtils-.used by.->SpinlessVSquareOperator;
+    SpinlessTvUtils--inherited by-->SpinlessTvSquareUtils-.used by.->Square_tV;
 
-    SpinlessTvUtils--> SpinlessTvHoneycombUtils-.->SpinlessVHoneycombOperator;
+    SpinlessTvUtils--> SpinlessTvHoneycombUtils-.->Honeycomb_tV;
     SpinlessTvUtils-.->SpinlessVOperator;
+    Operator-.->Spinless_tV-..-> PfQMC;
+    Operator-->SpinlessVOperator;
+    Spinless_tV-->Square_tV;
+    Spinless_tV-->Honeycomb_tV;
+    SpinlessVOperator;
     Operator-->DenseOperator;
-    Operator-->SpinlessVOperator-->SpinlessVHoneycombOperator;
-    SpinlessVOperator-->SpinlessVSquareOperator;
-    SpinlessVOperator-.->Spinless_tV-.-> PfQMC;
+    
 ```

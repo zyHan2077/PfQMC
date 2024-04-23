@@ -41,13 +41,44 @@ public:
     // virtual inline void KineticGenerator(MatType &H, DataType t) const {};
 
     // virtual inline DataType energyFromGreensFunc(const MatType &g) {};
+    virtual inline void aux2MajoranaIdx(int idxAux, int imaj, int bType, int& idx1, int& idx2) const = 0;
 
     // Generate the Greens function for single slice
-    virtual inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const {};
+    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const {
+
+        DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
+        if (inv) {
+            tmp = (-1.0) / tmp;
+        }
+
+        int idx1, idx2;
+        for (int i = 0; i < s.size(); i++) {
+            for(int k=0; k<2; k++) {
+                aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+                H(idx1, idx2) += -tmp * double(s(i));
+                H(idx2, idx1) += +tmp * double(s(i));
+            }
+        }
+    }
 
     // Directly generate B by directly writing each 2*2 block
     // B should be initialized as Identity
-    virtual inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const {};
+    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const {
+        DataType ch = chlV;
+        DataType ish = (1.0i) * shlV;
+        if (inv) ish = -ish;
+
+        int idx1, idx2;
+        for (int i = 0; i < s.size(); i++) {
+            for(int k=0; k<2; k++) {
+                aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+                B(idx1, idx1) = ch;
+                B(idx2, idx2) = ch;
+                B(idx1, idx2) = +ish * double(s(i));
+                B(idx2, idx1) = -ish * double(s(i));
+            }
+        }
+    }
 };
 
 class SpinlessVOperator : public Operator
@@ -86,7 +117,7 @@ public:
         config->InteractionBGenerator(B_inv, *s, bondType, true);
     }
 
-    virtual void aux2MajoranaIdx(int idxAux, int imaj, int& idx1, int& idx2) {};
+    // virtual inline void aux2MajoranaIdx(int idxAux, int imaj, int& idx1, int& idx2) {};
 
     void singleFlip(MatType &g, int idxAux, double rand, bool& flag) {
         DataType r = etaM;
@@ -98,7 +129,7 @@ public:
         DataType alpha;
 
         for (int imaj = 0; imaj < 2; imaj ++) {
-            aux2MajoranaIdx(idxAux, imaj, idx1, idx2);
+            config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
             // idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
             // idx2 = mConfig->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
             // tmp = [1 + i \sigma_{12} \tanh(\lambda / 2) G_{12}]
@@ -111,7 +142,7 @@ public:
 
         if (flag) {
             for (int imaj = 0; imaj < 2; imaj ++) {
-                aux2MajoranaIdx(idxAux, imaj, idx1, idx2);
+                config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
 
                 // update aux field and B matrix
                 (*s)(idxAux) = -auxCur;

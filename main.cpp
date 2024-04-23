@@ -52,8 +52,8 @@ int main_square() {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(8);
 
-    int Lx = 2;
-    int Ly = 2;
+    int Lx = 4;
+    int Ly = 6;
     int LTau = 100;
     double dt = 0.1;
     double V = 0.7;
@@ -78,6 +78,7 @@ int main_square() {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         // sign = pfqmc.getSignRaw();
+        // std::cout << "sign= " << sign << "\n";
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
 
         if ((i % 10) == 0)

@@ -187,7 +187,7 @@ TEST(FastUpdateTest, GreenFunction) {
     EXPECT_EQ(walker.op_array[l]->getType(), 2);
 
     bool flip = false;
-    SpinlessVHoneycombOperator* p = (SpinlessVHoneycombOperator*) walker.op_array[l];
+    SpinlessVOperator* p = (SpinlessVOperator*) walker.op_array[l];
     for (int i = 0; i < (Lx*Ly)/2; i++) {
         p->singleFlip(g, i, -0.1, flip);
         EXPECT_EQ(flip, true);

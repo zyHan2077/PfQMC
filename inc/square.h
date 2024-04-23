@@ -11,11 +11,11 @@
 // - 1 sites per unit cell
 // - 2 bonds per unit cell
 // - bonds are divided into 4 mutually commuting group
-// |---1---|---2---|---1---|---2---|
+// |---0---|---1---|---0---|---1---|
 // 3       3       3       3       3
-// |---1---|---2---|---1---|---2---|
-// 4       4       4       4       4
-// |---1---|---2---|---1---|---2---|
+// |---0---|---1---|---0---|---1---|
+// 2       2       2       2       2
+// |---0---|---1---|---0---|---1---|
 // so
 // - 2 majorana species
 class SpinlessTvSquareUtils : public SpinlessTvUtils {
@@ -30,6 +30,22 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
 
     inline int majoranaCoord2Idx(int ix, int iy, int imaj) const {
         return nsites * imaj + unitCellCoord2Idx(ix, iy);
+    }
+
+    inline void aux2MajoranaIdx(int idAux, int imaj, int bType, int &idx1, int &idx2) const override {
+        int ix, iy;
+        if (bType == 0 || bType == 1) {
+            iy = idAux % Ly;
+            ix = (idAux / Ly) * 2 + bType;
+            idx1 = majoranaCoord2Idx(ix, iy, imaj);
+            idx2 = majoranaCoord2Idx((ix + 1) % Lx, iy, imaj);
+        } else {
+            ix = idAux % Lx;
+            iy = (idAux / Lx) * 2 + bType - 2;
+            idx1 = majoranaCoord2Idx(ix, iy, imaj);
+            idx2 = majoranaCoord2Idx(ix, (iy + 1) % Ly, imaj);
+        }
+        // std::cout << "idAux=" << idAux << " btype=" << bondType << " " << idx1 << idx2 << "\n";
     }
 
     inline void KineticGenerator(MatType &H, DataType t) const {
@@ -88,81 +104,16 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
         }
         return r;
     }
-
-    // Directly generate B by directly writing each 2*2 block
-    // B should be initialized as Identity
-    inline void InteractionBGenerator(MatType &B, const iVecType &s,
-                                      const int bondType,
-                                      bool inv = false) const override {
-        DataType ch = chlV;
-        DataType ish = (1.0i) * shlV;
-        if (inv) ish = -ish;
-        int idx1, idx2;
-        int auxCount = 0;
-
-        if ((bondType == 0) || (bondType == 1)) {
-            // std::cout << "here!" << "\n";
-            for (int i = bondType; i < Lx; i += 2) {
-                for (int j = 0; j < Ly; j++) {
-                    for (int k = 0; k < 2; k++) {
-                        idx1 = majoranaCoord2Idx(i, j, k);
-                        idx2 = majoranaCoord2Idx((i + 1) % Lx, j, k);
-                        //  |   \cosh(\lambda)           ,  -i \sinh(\lambda)
-                        //  \sigma | |  +i \sinh(\lambda) \sigma  ,
-                        //  \cosh(\lambda)          |
-                        B(idx1, idx1) = ch;
-                        B(idx2, idx2) = ch;
-                        // std::cout << idx1 << " " << idx2 << " " << ish <<
-                        // "\n";
-                        B(idx1, idx2) = +ish * double(s(auxCount));
-                        B(idx2, idx1) = -ish * double(s(auxCount));
-                    }
-                    auxCount++;
-                }
-            }
-        } else {
-            for (int i = 0; i < Lx; i++) {
-                for (int j = bondType - 2; j < Ly; j += 2) {
-                    for (int k = 0; k < 2; k++) {
-                        idx1 = majoranaCoord2Idx(i, j, k);
-                        idx2 = majoranaCoord2Idx(i, (j + 1) % Ly, k);
-                        B(idx1, idx1) = ch;
-                        B(idx2, idx2) = ch;
-                        B(idx1, idx2) = +ish * double(s(auxCount));
-                        B(idx2, idx1) = -ish * double(s(auxCount));
-                    }
-                    auxCount++;
-                }
-            }
-        }
-    }
 };
 
-class SpinlessVSquareOperator : public SpinlessVOperator {
-   public:
-    const SpinlessTvSquareUtils *mConfig;
+// class SpinlessVSquareOperator : public SpinlessVOperator {
+//    public:
+//     const SpinlessTvSquareUtils *mConfig;
 
-    SpinlessVSquareOperator(const SpinlessTvSquareUtils *_config, iVecType *_s,
-                            int _bondType, rdGenerator *_rd)
-        : SpinlessVOperator(_config, _s, _bondType, _rd), mConfig(_config) {}
-
-    void aux2MajoranaIdx(int idAux, int imaj, int &idx1, int &idx2) override {
-        int ix, iy;
-        int Lx = mConfig->Lx;
-        int Ly = mConfig->Ly;
-        if (bondType == 0 || bondType == 1) {
-            iy = idAux % Ly;
-            ix = (idAux / Ly) * 2 + bondType;
-            idx1 = mConfig->majoranaCoord2Idx(ix, iy, imaj);
-            idx2 = mConfig->majoranaCoord2Idx((ix + 1) % Lx, iy, imaj);
-        } else {
-            ix = idAux % Lx;
-            iy = (idAux / Lx) * 2 + bondType - 2;
-            idx1 = mConfig->majoranaCoord2Idx(ix, iy, imaj);
-            idx2 = mConfig->majoranaCoord2Idx(ix, (iy + 1) / Ly, imaj);
-        }
-    }
-};
+//     SpinlessVSquareOperator(const SpinlessTvSquareUtils *_config, iVecType *_s,
+//                             int _bondType, rdGenerator *_rd)
+//         : SpinlessVOperator(_config, _s, _bondType, _rd), mConfig(_config) {}
+// };
 
 class Square_tV : public Spinless_tV {
    public:
@@ -194,8 +145,7 @@ class Square_tV : public Spinless_tV {
         nBond[3] = (modelConfig->Ly / 2) * modelConfig->Lx;
         nBond[2] = nSites - nBond[3];
 
-        // for (int i = 0; i<4; i++)
-        // std::cout << nBond[i] << "\n";
+        // for (int i = 0; i<4; i++) std::cout << "nBond " << i << " " << nBond[i] << "\n";
 
         op_array = std::vector<Operator *>(5 * l + 1);
         iVecType *s;
@@ -210,7 +160,7 @@ class Square_tV : public Spinless_tV {
                 s = new iVecType(nBond[j]);
                 for (int k = 0; k < nBond[j]; k++) (*s)(k) = rd->rdZ2();
                 op_array[5 * i + j + 1] =
-                    new SpinlessVSquareOperator(modelConfig, s, j, rd);
+                    new SpinlessVOperator(modelConfig, s, j, rd);
             }
         }
         op_array[5 * l] = new DenseOperator(expKhalf, 1.0);

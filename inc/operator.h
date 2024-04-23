@@ -24,7 +24,7 @@ public:
     virtual DataType getSignOfWeight() { return 1.0; };
     // virtual inline DataType getSignPfGInv() { return 1.0; };
     virtual DataType signOfUpdatedWeight(const MatType& g) {return 1.0; };
-    virtual void getGreensMat(MatType &g0){};
+    virtual void getGreensMat(MatType &g0) = 0;
     virtual void getGreensMatInv(MatType& g) {};
 
     // F = B * F
