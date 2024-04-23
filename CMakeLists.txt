@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES ( ${EIGEN3_INCLUDE_DIR} )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(SRC_LIST src/skewMatUtils.cpp src/operator.cpp src/pfqmc.cpp)
+set(SRC_LIST src/skewMatUtils.cpp src/pfqmc.cpp)
 
 set(MKL_INTERFACE lp64)
 
@@ -36,8 +36,9 @@ target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_
 target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
 
-# target_link_libraries(main_test GTest::gtest_main)
-add_executable(main_test ./main_test.cpp ${SRC_LIST})
+
+set(TEST_LIST ./test/main_test.cpp ./test/squareLatticeTest.cpp)
+add_executable(main_test ${TEST_LIST}  ${SRC_LIST})
 target_compile_options(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(main_test PUBLIC $<LINK_ONLY:MKL::MKL> GTest::gtest_main)

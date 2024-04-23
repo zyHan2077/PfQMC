@@ -1,6 +1,7 @@
 #ifndef PFQMC_H
 #define PFQMC_H
-#include "honeycomb.h"
+
+#include "spinless_tV.h"
 #include "qr_udt.h"
 
 class PfQMC
@@ -16,7 +17,7 @@ public:
     std::vector<UDT> udtL;
     std::vector<UDT> udtR;
 
-    PfQMC(Honeycomb_tV *walker, int _stb = 10);
+    PfQMC(Spinless_tV *walker, int _stb = 10);
 
     void rightInit()
     {
@@ -80,12 +81,14 @@ public:
     void leftSweep();
 
     // get sign by computing the pfaffian of
-    // a 4N * 4N matrix, for testing purpose
+    // a 4N * 4N matrix
     DataType getSignRaw();
 
     // should provide same result as getSignRaw
     // but by computing the pfaffian of a 2N * 2N matrix
-    DataType getSign();
+    // TODO: this method currently has fundamental flaws
+    // therefore should not be used
+    // DataType getSign();
     
     // ~PfQMC()
     // {

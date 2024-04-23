@@ -22,7 +22,7 @@ public:
     virtual void right_propagate(MatType &A, MatType &B){};
     virtual void update(MatType &g){};
     virtual DataType getSignOfWeight() { return 1.0; };
-    virtual inline DataType getSignPfGInv() { return 1.0; };
+    // virtual inline DataType getSignPfGInv() { return 1.0; };
     virtual DataType signOfUpdatedWeight(const MatType& g) {return 1.0; };
     virtual void getGreensMat(MatType &g0){};
     virtual void getGreensMatInv(MatType& g) {};
@@ -32,7 +32,6 @@ public:
 
     virtual iVecType *getAuxField() { return NULL; };
     virtual int getType() { return -1; };
-    virtual bool singleFlip(MatType &g, int idxCell, double rand) { return 0; };
     virtual ~Operator(){};
 };
 
@@ -57,9 +56,12 @@ public:
 
         int nDim = mat.cols();
         g0 = (MatType::Identity(nDim, nDim) + mat).inverse() * 2.0 - MatType::Identity(nDim, nDim);
+        // std::cout << "det of g0 = " << g0.determinant() <<"\n";
         g0_inv = g0.inverse();
+        // std::cout << g0_inv << "===g0_inv======= \n\n";
         MatType tmp = g0_inv;
         signPf_g0_inv = signOfPfaf(tmp);
+        // std::cout << g0_inv << "g0_inv \n";
     }
 
     void left_multiply(const MatType &A, MatType &B) override
@@ -102,9 +104,9 @@ public:
         return signOfWeight;
     }
 
-    inline DataType getSignPfGInv() override {
-        return signPf_g0_inv;
-    }
+    // inline DataType getSignPfGInv() override {
+    //     return signPf_g0_inv;
+    // }
 
     void getGreensMat(MatType &g) override
     {
@@ -123,76 +125,76 @@ public:
     }
 };
 
-class SpinlessTvHoneycombUtils;
+// class SpinlessTvHoneycombUtils;
 
-class SpinlessVOperator : public Operator
-{
-private:
-    const SpinlessTvHoneycombUtils *config;
-    const double etaM;
-    // delayed update for spinless t-V requires additional diagonalization
-    // const int delay_max = 32;
-    // cannot be larger than 64 (unless you change the threads value in kernel_linalg.cpp)
-public:
-    const int nUnitcell;
-    const int bondType;
-    // const int Naux; // number of auxillary fields (live on bonds)
-    const int nDim; // dimension of hamiltonian, number of sites × 2 (number of majorana species)
-    iVecType *s;
-    MatType B;
-    MatType B_inv;
-    rdGenerator *rd;
+// class SpinlessVHoneycombOperator : public Operator
+// {
+// private:
+//     const SpinlessTvHoneycombUtils *config;
+//     const double etaM;
+//     // delayed update for spinless t-V requires additional diagonalization
+//     // const int delay_max = 32;
+//     // cannot be larger than 64 (unless you change the threads value in kernel_linalg.cpp)
+// public:
+//     const int nUnitcell;
+//     const int bondType;
+//     // const int Naux; // number of auxillary fields (live on bonds)
+//     const int nDim; // dimension of hamiltonian, number of sites × 2 (number of majorana species)
+//     iVecType *s;
+//     MatType B;
+//     MatType B_inv;
+//     rdGenerator *rd;
 
-    // _s: aux fields, Z_2 variable, length = nUnitcell
-    SpinlessVOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd);
+//     // _s: aux fields, Z_2 variable, length = nUnitcell
+//     SpinlessVHoneycombOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd);
 
-    ~SpinlessVOperator() override;
+//     ~SpinlessVHoneycombOperator() override;
 
-    void reCalcInv();
+//     void reCalcInv();
 
-    bool singleFlip(MatType &g, int idxCell, double rand) override;
+//     bool singleFlip(MatType &g, int idxCell, double rand) override;
 
-    void update(MatType &g) override;
+//     void update(MatType &g) override;
 
-    void right_multiply(const MatType &AIn, MatType &AOut) override;
+//     void right_multiply(const MatType &AIn, MatType &AOut) override;
 
-    void left_multiply(const MatType &AIn, MatType &Aout) override
-    {
-        Aout = B * AIn;
-    }
+//     void left_multiply(const MatType &AIn, MatType &Aout) override
+//     {
+//         Aout = B * AIn;
+//     }
 
-    void left_propagate(MatType &g, MatType &gTmp) override
-    {
-        reCalcInv();
-        gTmp = B * g;
-        g = gTmp * B_inv;
-    }
-    void right_propagate(MatType &g, MatType &gTmp) override
-    {
-        reCalcInv();
-        gTmp = B_inv * g;
-        g = gTmp * B;
-    }
+//     void left_propagate(MatType &g, MatType &gTmp) override
+//     {
+//         reCalcInv();
+//         gTmp = B * g;
+//         g = gTmp * B_inv;
+//     }
+//     void right_propagate(MatType &g, MatType &gTmp) override
+//     {
+//         reCalcInv();
+//         gTmp = B_inv * g;
+//         g = gTmp * B;
+//     }
 
-    iVecType *getAuxField() override
-    {
-        return s;
-    }
+//     iVecType *getAuxField() override
+//     {
+//         return s;
+//     }
 
-    int getType() override
-    {
-        return bondType;
-    }
+//     int getType() override
+//     {
+//         return bondType;
+//     }
 
-    void getGreensMat(MatType &g) override;
-    void getGreensMatInv(MatType& g) override;
-    inline DataType getSignPfGInv() override;
+//     void getGreensMat(MatType &g) override;
+//     void getGreensMatInv(MatType& g) override;
+//     inline DataType getSignPfGInv() override;
 
-    void stabilizedLeftMultiply(UDT &F) override
-    {
-        // F.bMultUpdate(B);
-        F = B * F;
-    }
-};
+//     void stabilizedLeftMultiply(UDT &F) override
+//     {
+//         // F.bMultUpdate(B);
+//         F = B * F;
+//     }
+// };
 
 #endif

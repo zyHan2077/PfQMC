@@ -1,9 +1,9 @@
 #include "pfqmc.h"
 
-PfQMC::PfQMC(Honeycomb_tV *walker, int _stb)
+PfQMC::PfQMC(Spinless_tV *walker, int _stb)
 {
     stb = _stb;
-    nDim = (walker->nSites) * 2;
+    nDim = walker->nDim;
     g = MatType::Identity(nDim, nDim);
     op_array = walker->op_array;
     op_length = op_array.size();
@@ -144,37 +144,40 @@ DataType PfQMC::getSignRaw()
     return signCur;
 }
 
-DataType PfQMC::getSign() {
-    //TODO: to be implemented
-    const MatType identity = MatType::Identity(nDim, nDim);
-    UDT A(nDim);
-    op_array[0]->stabilizedLeftMultiply(A);
-    MatType gNext, gCur, gInv, gTemp, t;
-    DataType signCur, signNext, signPfaf;
-    signCur = op_array[0]->getSignOfWeight();
-    A.onePlusInv(gCur);
-    gCur -= identity;
-    for (int i = 1; i < op_length; i++)
-    {
-        op_array[i]->getGreensMat(gNext);
-        op_array[i]->getGreensMatInv(gInv);
-        MatType t = gNext * gInv;
-        // std::cout << (t - identity).squaredNorm() << "gNext * gInv, bType" << op_array[i]->getType()<<  " \n";
-        // EXPECT_NEAR(, 0.0, 1e-10);
-        signNext = op_array[i]->getSignOfWeight();
-        // std::cout << gNext << "==== gnext ====\n \n";
-        // std::cout << gCur << "==== gcur ====\n \n";
-        gTemp = gInv + gCur;
-        signPfaf = signOfPfaf(gTemp) / op_array[i]->getSignPfGInv();
-        // signPfaf = 1.0;
-        // std::cout << "sCur, sNext, sPfaf=" << signCur << " " << signNext << " " << signPfaf << "\n"; 
-        signCur = (signCur * signNext * signPfaf);
-        // std::cout << signCur << " sign cur\n";
-        if (i == op_length - 1)
-            break;
-        op_array[i]->stabilizedLeftMultiply(A);
-        A.onePlusInv(gCur);
-        gCur -= identity;
-    }
-    return signCur;
-}
+// DataType PfQMC::getSign() {
+//     //TODO: this current method has fundamental flaws
+//     const MatType identity = MatType::Identity(nDim, nDim);
+//     UDT A(nDim);
+//     op_array[0]->stabilizedLeftMultiply(A);
+//     MatType gNext, gCur, gInv, gTemp, t;
+//     DataType signCur, signNext, signPfaf;
+//     signCur = op_array[0]->getSignOfWeight();
+//     A.onePlusInv(gCur);
+//     gCur -= identity;
+//     for (int i = 1; i < op_length; i++)
+//     {
+//         op_array[i]->getGreensMat(gNext);
+//         // std::cout << gNext << "==== gnext ====\n \n";
+//         // std::cout << "det of g=" << gNext.determinant() << "\n";
+//         op_array[i]->getGreensMatInv(gInv);
+//         MatType t = gNext * gInv;
+//         // std::cout << (t - identity).squaredNorm() << "gNext * gInv, bType" << op_array[i]->getType()<<  " \n";
+//         // EXPECT_NEAR(, 0.0, 1e-10);
+//         signNext = op_array[i]->getSignOfWeight();
+//         // std::cout << gNext << "==== gnext ====\n \n";
+//         // std::cout << gCur << "==== gcur ====\n \n";
+//         // std::cout << gInv << "=gInv\n";
+//         gTemp = gInv + gCur;
+//         signPfaf = signOfPfaf(gTemp) / op_array[i]->getSignPfGInv();
+//         // signPfaf = 1.0;
+//         // std::cout << "sCur, sNext, sPfaf=" << signCur << " " << signNext << " " << signPfaf << "\n\n"; 
+//         signCur = (signCur * signNext * signPfaf);
+//         // std::cout << signCur << " sign cur\n";
+//         if (i == op_length - 1)
+//             break;
+//         op_array[i]->stabilizedLeftMultiply(A);
+//         A.onePlusInv(gCur);
+//         gCur -= identity;
+//     }
+//     return signCur;
+// }

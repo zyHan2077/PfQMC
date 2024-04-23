@@ -4,13 +4,14 @@
 #include "types.h"
 #include "operator.h"
 #include "skewMatUtils.h"
+#include "spinless_tV.h"
 
 // a honeycomb lattice is defined by 
 // - Lx * Ly unit cells
 // - 2 sites per unit cell
 // - 3 bonds per unit cell
 // - 2 majorana species
-class SpinlessTvHoneycombUtils
+class SpinlessTvHoneycombUtils: public SpinlessTvUtils
 {
 public:
     struct majoranaCoord
@@ -19,37 +20,17 @@ public:
         majoranaCoord(int _ix=0, int _iy=0, int _iSubcell=0, int _imaj=0)
             : ix(_ix), iy(_iy), iSubcell(_iSubcell), imaj(_imaj) {};
     };
-    
-    int Lx, Ly;
+
     int nsites;
-    int nUnitcell; // also number of auxillary fields per direction
-    double dt;
-    double V;
-    int l;
-    double lambdaV, chlV, shlV, thlV, etaM;
+    int nUnitcell;
 
     SpinlessTvHoneycombUtils(int _Lx, int _Ly, double _dt, 
-            double _V, int _l) {
+            double _V, int _l) 
+            :SpinlessTvUtils(_Lx, _Ly, _dt, _V, _l, _Lx*_Ly*4) {
     
         // model configuration
-        Lx = _Lx;
-        Ly = _Ly;
         nUnitcell = Lx*Ly;
         nsites = nUnitcell*2;
-        dt = _dt;
-        V = _V;
-        l = _l; // imaginary time slices
-
-        lambdaV = acosh(exp(0.5*V*dt));
-        chlV = cosh(lambdaV);
-        shlV = sinh(lambdaV);
-        thlV = tanh(lambdaV);
-        etaM = chlV * chlV;
-        
-    }
-
-    inline int unitCellCoord2Idx(int ix, int iy) const {
-        return ix*Ly + iy;
     }
 
     inline majoranaCoord idxCell2Coord(int idx) const {
@@ -165,7 +146,7 @@ public:
     }
 
     // Generate the Greens function for single slice
-    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const {
+    inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const override {
         DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
         if (inv) {
             tmp = (-1.0) / tmp;
@@ -188,7 +169,7 @@ public:
 
     // Directly generate B by directly writing each 2*2 block
     // B should be initialized as Identity
-    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const {
+    inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const override {
         DataType ch = chlV;
         DataType ish = (1.0i) * shlV;
         if (inv) ish = -ish;
@@ -213,14 +194,33 @@ public:
     }
 };
 
+// class SpinlessTvHoneycombUtils;
+
+class SpinlessVHoneycombOperator : public SpinlessVOperator
+{
+public:
+    // _s: aux fields, Z_2 variable, length = nUnitcell
+    const SpinlessTvHoneycombUtils *mConfig;
+    const int nUnitcell;
+
+    SpinlessVHoneycombOperator(const SpinlessTvHoneycombUtils *_config, iVecType *_s, int _bondType, rdGenerator *_rd)
+        :SpinlessVOperator(_config, _s, _bondType, _rd), mConfig(_config), nUnitcell(mConfig->nUnitcell) {
+    }
+
+    // ~SpinlessVHoneycombOperator() override;
+
+    void aux2MajoranaIdx(int idAux, int imaj, int& idx1, int& idx2) override {
+        SpinlessTvHoneycombUtils::majoranaCoord m = mConfig->idxCell2Coord(idAux);
+        idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
+        idx2 = mConfig->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
+    }
+};
 
 
-class Honeycomb_tV 
+class Honeycomb_tV: public Spinless_tV
 {
 public:
     const SpinlessTvHoneycombUtils* modelConfig;
-    
-    std::vector<Operator *> op_array;
     double dt;
     int l;
     int nSites, nUnitcell;
@@ -230,11 +230,11 @@ public:
         modelConfig = _config;
         dt = modelConfig->dt;
         l = modelConfig->l;
-        nSites = modelConfig->nsites;
-        nUnitcell = modelConfig->nUnitcell;
+        nUnitcell = modelConfig->Lx * modelConfig->Ly;
+        nSites = nUnitcell * 2;
         rd = _rd;
 
-        int nDim = nSites * 2;
+        nDim = nSites * 2;
         MatType Ht(nDim, nDim);
         const MatType identity = MatType::Identity(nDim, nDim);
         modelConfig->KineticGenerator(Ht, 1.0);
@@ -253,14 +253,14 @@ public:
             for (int j=0; j<3; j++) {
                 s = new iVecType(nUnitcell);
                 for (int k=0; k<nUnitcell; k++) (*s)(k) = rd->rdZ2();
-                op_array[4*i + j + 1] = new SpinlessVOperator(modelConfig, s, j, rd);
+                op_array[4*i + j + 1] = new SpinlessVHoneycombOperator(modelConfig, s, j, rd);
             }
         }
         op_array[4*l] = new DenseOperator(expKhalf, 1.0);
     }
 
     ~Honeycomb_tV() {
-        for (int i=0; i<4l+1; i++) {
+        for (int i=0; i<4*l+1; i++) {
             delete op_array[i];
         }
     }
