@@ -6,6 +6,16 @@
 #include "spinless_tV.h"
 #include "types.h"
 
+/* 
+ * This macro is purely for fun.
+ * For 4n*4m lattice, rearanging the
+ * hopping signs introduces no changes
+ * to the final result. However for e.g 4*6
+ * lattice, this macro defines a model which
+ * is different from the original t-V model
+ */
+// #define INVERSEBOND
+
 // a square lattice is defined by
 // - Lx * Ly unit cells
 // - 1 sites per unit cell
@@ -21,11 +31,13 @@
 class SpinlessTvSquareUtils : public SpinlessTvUtils {
    public:
     int nsites;
+    DataType delta;
 
-    SpinlessTvSquareUtils(int _Lx, int _Ly, double _dt, double _V, int _l)
+    SpinlessTvSquareUtils(int _Lx, int _Ly, double _dt, double _V, int _l, DataType _delta=0.0)
         : SpinlessTvUtils(_Lx, _Ly, _dt, _V, _l, _Lx * _Ly * 2) {
         // model configuration
         nsites = Lx * Ly;
+        delta = _delta;
     }
 
     inline int majoranaCoord2Idx(int ix, int iy, int imaj) const {
@@ -45,23 +57,43 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
             idx1 = majoranaCoord2Idx(ix, iy, imaj);
             idx2 = majoranaCoord2Idx(ix, (iy + 1) % Ly, imaj);
         }
+
+        #ifndef INVERSEBOND
+        if ( (ix + iy) % 2 == 1) {
+            std::swap(idx1, idx2);
+        }   
+        #endif
         // std::cout << "idAux=" << idAux << " btype=" << bondType << " " << idx1 << idx2 << "\n";
     }
 
     inline void KineticGenerator(MatType &H, DataType t) const {
         H.setZero();
-        int idx1, idx2;
+        int idx1, idx2, idx2p;
         DataType tmp = (1.0i) * t;
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Ly; j++) {
                 for (int k = 0; k < 2; k++) {
                     idx1 = majoranaCoord2Idx(i, j, k);
                     idx2 = majoranaCoord2Idx((i + 1) % Lx, j, k);
-                    H(idx1, idx2) = tmp;
-                    H(idx2, idx1) = -tmp;
-                    idx2 = majoranaCoord2Idx(i, (j + 1) % Ly, k);
-                    H(idx1, idx2) = tmp;
-                    H(idx2, idx1) = -tmp;
+                    idx2p = majoranaCoord2Idx(i, (j + 1) % Ly, k);
+                    #ifndef INVERSEBOND
+                        if((i+j)% 2 == 0) {
+                            H(idx1, idx2) = tmp;
+                            H(idx2, idx1) = -tmp;
+                            H(idx1, idx2p) = tmp;
+                            H(idx2p, idx1) = -tmp;
+                        } else {
+                            H(idx2, idx1) = tmp;
+                            H(idx1, idx2) = -tmp;
+                            H(idx2p, idx1) = tmp;
+                            H(idx1, idx2p) = -tmp;
+                        }
+                    #else
+                        H(idx1, idx2) = tmp;
+                        H(idx2, idx1) = -tmp;
+                        H(idx1, idx2p) = tmp;
+                        H(idx2p, idx1) = -tmp;
+                    #endif
                 }
             }
         }
@@ -70,15 +102,23 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
     inline DataType energyFromGreensFunc(const MatType &g) {
         DataType r = 0.0;
         DataType tmp = (0.5i);
-        int idx1, idx2;
+        int idx1, idx2, idx2p;
+        DataType r0;
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Ly; j++) {
                 for (int k = 0; k < 2; k++) {
+                    r0 = 0.0;
                     idx1 = majoranaCoord2Idx(i, j, k);
                     idx2 = majoranaCoord2Idx((i + 1) % Lx, j, k);
-                    r += tmp * g(idx1, idx2);
-                    idx2 = majoranaCoord2Idx(i, (j + 1) % Ly, k);
-                    r += tmp * g(idx1, idx2);
+                    idx2p = majoranaCoord2Idx(i, (j + 1) % Ly, k);
+                    r0 += tmp * g(idx1, idx2);
+                    r0 += tmp * g(idx1, idx2p);
+                    #ifndef INVERSEBOND
+                        if((i+j)% 2 == 1) {
+                            r0 = -r0;
+                        }
+                    #endif
+                    r += r0;
                 }
             }
         }

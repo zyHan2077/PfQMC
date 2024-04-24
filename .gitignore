@@ -4,3 +4,4 @@ build/
 .ipynb*
 obj/
 bin/
+data/
