@@ -31,9 +31,9 @@
 class SpinlessTvSquareUtils : public SpinlessTvUtils {
    public:
     int nsites;
-    DataType delta;
+    double delta;
 
-    SpinlessTvSquareUtils(int _Lx, int _Ly, double _dt, double _V, int _l, DataType _delta=0.0)
+    SpinlessTvSquareUtils(int _Lx, int _Ly, double _dt, double _V, int _l, double _delta=0.0)
         : SpinlessTvUtils(_Lx, _Ly, _dt, _V, _l, _Lx * _Ly * 2) {
         // model configuration
         nsites = Lx * Ly;
@@ -70,12 +70,15 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
         H.setZero();
         int idx1, idx2, idx2p;
         DataType tmp = (1.0i) * t;
+        DataType tmpDelta = (1.0i) * delta;
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Ly; j++) {
                 for (int k = 0; k < 2; k++) {
                     idx1 = majoranaCoord2Idx(i, j, k);
                     idx2 = majoranaCoord2Idx((i + 1) % Lx, j, k);
                     idx2p = majoranaCoord2Idx(i, (j + 1) % Ly, k);
+
+                    // hopping part
                     #ifndef INVERSEBOND
                         if((i+j)% 2 == 0) {
                             H(idx1, idx2) = tmp;
@@ -95,6 +98,25 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
                         H(idx2p, idx1) = -tmp;
                     #endif
                 }
+                // pairing part, i \to i+x
+                idx1 = majoranaCoord2Idx(i, j, 0);
+                idx2 = majoranaCoord2Idx((i + 1) % Lx, j, 0);
+                H(idx1, idx2) += tmpDelta;
+                H(idx2, idx1) += -tmpDelta;
+                idx1 = majoranaCoord2Idx(i, j, 1);
+                idx2 = majoranaCoord2Idx((i + 1) % Lx, j, 1);
+                H(idx1, idx2) += -tmpDelta;
+                H(idx2, idx1) += tmpDelta;
+
+                // pairing part, i \to i+y
+                idx1 = majoranaCoord2Idx(i, j, 0);
+                idx2 = majoranaCoord2Idx(i, (j + 1) % Ly, 1);
+                H(idx1, idx2) += tmpDelta;
+                H(idx2, idx1) += -tmpDelta;
+                idx1 = majoranaCoord2Idx(i, j, 1);
+                idx2 = majoranaCoord2Idx(i, (j + 1) % Ly, 0);
+                H(idx1, idx2) += tmpDelta;
+                H(idx2, idx1) += -tmpDelta;
             }
         }
     }
