@@ -20,7 +20,7 @@ public:
     virtual void adjoint_inv_right_multiply(const MatType &A, MatType &B){};
     virtual void left_propagate(MatType &A, MatType &B){};
     virtual void right_propagate(MatType &A, MatType &B){};
-    virtual void update(MatType &g){};
+    virtual DataType update(MatType &g) = 0;
     virtual DataType getSignOfWeight() { return 1.0; };
     // virtual inline DataType getSignPfGInv() { return 1.0; };
     virtual DataType signOfUpdatedWeight(const MatType& g) {return 1.0; };
@@ -122,6 +122,10 @@ public:
     {
         F = mat * F;
         // F.bMultUpdate(mat);
+    }
+
+    DataType update(MatType& g) override {
+        return 1.0;
     }
 };
 

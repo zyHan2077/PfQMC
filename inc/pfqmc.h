@@ -17,6 +17,8 @@ public:
     std::vector<UDT> udtL;
     std::vector<UDT> udtR;
 
+    DataType sign;
+
     PfQMC(Spinless_tV *walker, int _stb = 10);
 
     void rightInit()

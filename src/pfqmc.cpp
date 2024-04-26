@@ -24,6 +24,7 @@ PfQMC::PfQMC(Spinless_tV *walker, int _stb)
     udtR = std::vector<UDT>(checkpoints);
     leftInit();
     rightInit();
+    sign = getSignRaw();
 }
 
 void PfQMC::rightSweep()
@@ -31,9 +32,12 @@ void PfQMC::rightSweep()
     MatType tmp = MatType::Identity(nDim, nDim);
     MatType Aseg = MatType::Identity(nDim, nDim);
     int curSeg = 0;
+    DataType signCur;
     for (int l = 0; l < op_length; l++)
     {
-        op_array[l]->update(g);
+        signCur = op_array[l]->update(g);
+        this->sign *= signCur;
+
         op_array[l]->left_multiply(Aseg, tmp);
         std::swap(Aseg, tmp);
         //%op_length is important, cannot be remove. or else the last segment will not be calculated
@@ -77,10 +81,13 @@ void PfQMC::leftSweep()
     MatType tmp = MatType::Identity(nDim, nDim);
     MatType Aseg = MatType::Identity(nDim, nDim);
     int curSeg = checkpoints - 1;
+    DataType signCur;
     for (int l = op_length - 1; l > -1; l--)
     {
         op_array[l]->right_propagate(g, tmp);
-        op_array[l]->update(g);
+        signCur = op_array[l]->update(g);
+        sign *= signCur;
+        
         op_array[l]->right_multiply(Aseg, tmp);
         std::swap(Aseg, tmp);
         if (need_stabilization[l])

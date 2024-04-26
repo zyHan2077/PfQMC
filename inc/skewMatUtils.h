@@ -26,6 +26,19 @@ inline MatType expm(MatType &H, double lambda)
     return expK;
 }
 
+inline MatType sinhHQuarterSqrt2(MatType& H) {
+    Eigen::SelfAdjointEigenSolver<MatType> es(H);
+    MatType V = es.eigenvectors();
+    MatType D = es.eigenvalues();
+    int N = H.rows();
+    MatType sinhK(N, N);
+    D = D.array() * 0.25;
+    MatType Dinv = - D.array();
+    D = (D.array().exp() - Dinv.array().exp()) / sqrt(2);
+    sinhK.noalias() = V * D.asDiagonal() * V.adjoint();
+    return sinhK;
+}
+
 // calculate eta directly using
 // eta = (-2)^N Pf [...]
 // should only be used for testing
@@ -36,5 +49,7 @@ DataType signOfPfaf(MatType& A);
 DataType pfaffianForEta(const MatType &H);
 DataType pfaffianForSignOfEta(const MatType &H);
 DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2);
+
+DataType signOfHamiltonian(const MatType &H);
 
 #endif

@@ -75,12 +75,21 @@ int main_square() {
 
     DataType energy = 0.0;
     DataType sign = 1.0;
+    DataType signFast;
     DataType signTot = 0.0;
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         sign = pfqmc.getSignRaw();
-        // std::cout << "sign= " << sign << "\n";
+
+        signFast = pfqmc.sign;
+
+        double deviation = std::abs(sign - signFast);
+        if (deviation > 1e-5) {
+            pfqmc.sign = sign; // update sign
+            std::cout << "\n=== error in sign at round = " << i << " raw sign = " << sign << " ≠ " << signFast << "==== \n"; 
+        }
+
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
         signTot += sign;
 

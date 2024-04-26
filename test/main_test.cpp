@@ -187,11 +187,13 @@ TEST(FastUpdateTest, GreenFunction) {
     EXPECT_EQ(walker.op_array[l]->getType(), 2);
 
     bool flip = false;
+    DataType sign = 1.0;
     SpinlessVOperator* p = (SpinlessVOperator*) walker.op_array[l];
     for (int i = 0; i < (Lx*Ly)/2; i++) {
-        p->singleFlip(g, i, -0.1, flip);
+        p->singleFlip(g, i, -0.1, flip, sign);
         EXPECT_EQ(flip, true);
     }
+    EXPECT_NEAR(std::abs(sign - 1.0), 0.0, 1e-10);
     // std::cout << ( g + g.transpose() - (2*identity) ).squaredNorm() << " test g skew\n";
 
     iVecType s = *(walker.op_array[l]->getAuxField());

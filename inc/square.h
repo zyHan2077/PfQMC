@@ -5,7 +5,6 @@
 #include "skewMatUtils.h"
 #include "spinless_tV.h"
 #include "types.h"
-
 /* 
  * This macro is purely for fun.
  * For 4n*4m lattice, rearanging the
@@ -66,7 +65,7 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
         // std::cout << "idAux=" << idAux << " btype=" << bondType << " " << idx1 << idx2 << "\n";
     }
 
-    inline void KineticGenerator(MatType &H, DataType t) const {
+    inline void KineticGenerator(MatType &H, DataType t=1.0) const {
         H.setZero();
         int idx1, idx2, idx2p;
         DataType tmp = (1.0i) * t;
@@ -164,6 +163,8 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
                 r -= tmp * g(idxi1, idxi2) * g(idxj1, idxj2);
             }
         }
+
+        //TODO: pairing energy
         return r;
     }
 };
@@ -196,9 +197,18 @@ class Square_tV : public Spinless_tV {
         nDim = nSites * 2;
         MatType Ht(nDim, nDim);
         const MatType identity = MatType::Identity(nDim, nDim);
-        modelConfig->KineticGenerator(Ht, 1.0);
-        MatType expK = expm(Ht, -dt);
-        MatType expKhalf = expm(Ht, -dt / 2.0);
+        modelConfig->KineticGenerator(Ht);
+        MatType Hcopy(Ht);
+        MatType expK = expm(Hcopy, -dt);
+        Hcopy = Ht;
+        MatType expKhalf = expm(Hcopy, -dt / 2.0);
+
+        // sign associated with K and Khalf (should be 1.0 if dt is small enough)
+        Hcopy = dt * Ht;
+        DataType signK = signOfHamiltonian(Hcopy);
+        Hcopy = (0.5 * dt ) * Ht;
+        DataType signKHalf = signOfHamiltonian(Hcopy);
+        // MatType sinhKQuater = expKQuater 
 
         // number of bonds, therefore auxillary fields
         // for each species
@@ -213,9 +223,9 @@ class Square_tV : public Spinless_tV {
         iVecType *s;
         for (int i = 0; i < l; i++) {
             if (i == 0) {
-                op_array[0] = new DenseOperator(expKhalf, 1.0);
+                op_array[0] = new DenseOperator(expKhalf, signKHalf);
             } else {
-                op_array[5 * i] = new DenseOperator(expK, 1.0);
+                op_array[5 * i] = new DenseOperator(expK, signK);
             }
 
             for (int j = 0; j < 4; j++) {
@@ -225,7 +235,7 @@ class Square_tV : public Spinless_tV {
                     new SpinlessVOperator(modelConfig, s, j, rd);
             }
         }
-        op_array[5 * l] = new DenseOperator(expKhalf, 1.0);
+        op_array[5 * l] = new DenseOperator(expKhalf, signKHalf);
     }
 };
 

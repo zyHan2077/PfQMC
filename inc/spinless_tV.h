@@ -119,7 +119,7 @@ public:
 
     // virtual inline void aux2MajoranaIdx(int idxAux, int imaj, int& idx1, int& idx2) {};
 
-    void singleFlip(MatType &g, int idxAux, double rand, bool& flag) {
+    void singleFlip(MatType &g, int idxAux, double rand, bool& flag, DataType& signCur) {
         DataType r = etaM;
         // auto m = mConfig->idxCell2Coord(idxCell);
         int auxCur = (*s)(idxAux);
@@ -141,6 +141,7 @@ public:
         // std::cout << rand << "=rand " << "r = " << r << "\n";
 
         if (flag) {
+            signCur *= (r / std::abs(r));
             for (int imaj = 0; imaj < 2; imaj ++) {
                 config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
 
@@ -162,14 +163,16 @@ public:
         }
     };
 
-    void update(MatType &g) override {
+    DataType update(MatType &g) override {
         double rand;
         bool flag;
+        DataType signCur=1.0;
         for (int i=0; i<s->size(); i++) {
             // random real between (0, 1)
             rand = rd->rdUniform01();
-            singleFlip(g, i, rand, flag);
+            singleFlip(g, i, rand, flag, signCur);
         }
+        return signCur;
     }
 
     void right_multiply(const MatType &AIn, MatType &AOut) override {

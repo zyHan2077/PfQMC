@@ -190,3 +190,12 @@ DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2) {
     DataType r = signOfPfaf(A);
     return r;
 }
+
+DataType signOfHamiltonian(const MatType &H) {
+    int n = H.cols() / 2;
+    MatType Hcopy = H;
+    MatType sinhK = sinhHQuarterSqrt2(Hcopy);
+    DataType sign = (n % 2 == 0) ? 1 : -1;
+    sign *= pfaffianForSignOfProduct(sinhK, sinhK);
+    return sign;
+}
