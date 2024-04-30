@@ -120,27 +120,40 @@ public:
     // virtual inline void aux2MajoranaIdx(int idxAux, int imaj, int& idx1, int& idx2) {};
 
     void singleFlip(MatType &g, int idxAux, double rand, bool& flag, DataType& signCur) {
-        DataType r = etaM;
+        DataType r;
         // auto m = mConfig->idxCell2Coord(idxCell);
         int auxCur = (*s)(idxAux);
-        int idx1, idx2;
+        int idx1, idx2, idx3, idx4;
         DataType tmp[2];
         const int inc =  1;
         DataType alpha;
 
-        for (int imaj = 0; imaj < 2; imaj ++) {
-            config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
-            // idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
-            // idx2 = mConfig->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
-            // tmp = [1 + i \sigma_{12} \tanh(\lambda / 2) G_{12}]
-            tmp[imaj] = ( 1.0 - ( (1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2) ) );
-            r *= tmp[imaj];
-        }
+        config->aux2MajoranaIdx(idxAux, 0, bondType, idx1, idx2);
+        config->aux2MajoranaIdx(idxAux, 1, bondType, idx3, idx4);
+        tmp[0] = ( 1.0 - ( (1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2) ) );
+        tmp[1] = ( 1.0 - ( (1.0i) * (config->thlV) * double(auxCur) * g(idx3, idx4) ) );
+        r = tmp[0] * tmp[1];
+        // std::cout << "r1" << r << " ";
+        r += (config->thlV * config->thlV) * ( (g(idx1, idx3) * g(idx2, idx4)) - (g(idx2, idx3) * g(idx1, idx4)) );
+        // std::cout << " r2" << r << "\n";
+        r *= etaM;
+        // for (int imaj = 0; imaj < 2; imaj ++) {
+        //     config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
+        //     // idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
+        //     // idx2 = mConfig->neighborSiteIdx(m.ix, m.iy, imaj, bondType);
+        //     // tmp = [1 + i \sigma_{12} \tanh(\lambda / 2) G_{12}]
+        //     tmp[imaj] = ( 1.0 - ( (1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2) ) );
+        //     r *= tmp[imaj];
+        // }
 
         flag = rand < std::abs(r);
         // std::cout << rand << "=rand " << "r = " << r << "\n";
 
         if (flag) {
+            // DataType t = (r / std::abs(r));
+            // if (std::abs(t.imag()) > 1e-5) {
+            //     std::cout << "r= " << r << " sign(r)= " << t << "\n";
+            // }
             signCur *= (r / std::abs(r));
             for (int imaj = 0; imaj < 2; imaj ++) {
                 config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);

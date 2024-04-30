@@ -57,7 +57,7 @@ int main_square() {
     int LTau = 100;
     double dt = 0.1;
     double V = 0.7;
-    double delta = 1.0;
+    double delta = 0.5;
     int stabilizationTime = 10;
     int thermalLength = 200;
     int evaluationLength = 1000;
@@ -89,10 +89,10 @@ int main_square() {
 
         // signFast = pfqmc.sign;
 
-        // double deviation = std::abs(sign - signFast);
+        // double deviation = std::abs(sign - rawSign);
         // if (deviation > 1e-2) {
-        //     pfqmc.sign = sign; // update sign
-        //     std::cout << "\n=== error in sign at round = " << i << " raw sign = " << sign << " ≠ " << signFast << "==== \n"; 
+        //     pfqmc.sign = rawSign; // update sign
+        //     std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
         // }
 
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
