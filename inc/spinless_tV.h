@@ -157,7 +157,9 @@ public:
             signCur *= (r / std::abs(r));
             for (int imaj = 0; imaj < 2; imaj ++) {
                 config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
-
+                if (imaj == 1) {
+                    tmp[1] = ( 1.0 - ( (1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2) ) );
+                }
                 // update aux field and B matrix
                 (*s)(idxAux) = -auxCur;
                 B(idx1, idx2) = -B(idx1, idx2);
