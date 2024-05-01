@@ -123,6 +123,8 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
     inline DataType energyFromGreensFunc(const MatType &g) {
         DataType r = 0.0;
         DataType tmp = (0.5i);
+        DataType tmpDelta = (0.5i) * delta;
+
         int idx1, idx2, idx2p;
         DataType r0;
         for (int i = 0; i < Lx; i++) {
@@ -141,6 +143,18 @@ class SpinlessTvSquareUtils : public SpinlessTvUtils {
                     #endif
                     r += r0;
                 }
+
+                // pairing part
+                idx1 = majoranaCoord2Idx(i, j, 0);
+                idx2 = majoranaCoord2Idx((i + 1) % Lx, j, 0);
+                r += tmpDelta * g(idx1, idx2);
+                idx2 = majoranaCoord2Idx(i, (j+1)%Ly, 1);
+                r += tmpDelta * g(idx1, idx2);
+                idx1 = majoranaCoord2Idx(i, j, 1);
+                idx2 = majoranaCoord2Idx((i + 1) % Lx, j, 1);
+                r -= tmpDelta * g(idx1, idx2);
+                idx2 = majoranaCoord2Idx(i, (j+1)%Ly, 0);
+                r += tmpDelta * g(idx1, idx2);
             }
         }
 

@@ -54,9 +54,9 @@ int main_square() {
 
     int Lx = 4;
     int Ly = 4;
-    int LTau = 100;
+    int LTau = 200;
     double dt = 0.1;
-    double V = 0.7;
+    double V = 0.3;
     double delta = 0.5;
     int stabilizationTime = 10;
     int thermalLength = 200;
@@ -78,28 +78,25 @@ int main_square() {
     DataType signFast;
     DataType signTot = 0.0;
     DataType rawSignTot = 0.0;
-    DataType rawSign;
+    DataType rawSign = 1.0;
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
-        rawSign = pfqmc.getSignRaw();
-        rawSignTot += rawSign;
-        // sign = pfqmc.getSignRaw();
         sign = pfqmc.sign;
 
-        // signFast = pfqmc.sign;
-
+        // rawSign = pfqmc.getSignRaw();
+        // rawSignTot += rawSign;
         // double deviation = std::abs(sign - rawSign);
         // if (deviation > 1e-2) {
-        //     pfqmc.sign = rawSign; // update sign
+        //     // pfqmc.sign = rawSign; // update sign
         //     std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
         // }
 
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
         signTot += sign;
-        std::cout << "sign = " << sign << " raw sign = " << rawSign << "\n";
+        // std::cout << "sign = " << sign << " raw sign = " << rawSign << "\n";
         if ((i % 10) == 0)
-            std::cout << "iter = " << i << " sign ave = " << signTot / double(i + 1) << "raw sign ave = " << rawSignTot / double(i + 1)
+            std::cout << "iter = " << i << " sign ave = " << signTot / double(i + 1) << " current sign= " << sign
                       << " energy=" << energy / signTot << "\n";
     }
     // std::cout << pfqmc.g << "\n";
