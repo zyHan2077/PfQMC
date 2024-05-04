@@ -56,7 +56,7 @@ int main_square() {
     int Ly = 4;
     int LTau = 200;
     double dt = 0.1;
-    double V = 0.3;
+    double V = 0.7;
     double delta = 0.5;
     int stabilizationTime = 10;
     int thermalLength = 200;
@@ -96,7 +96,7 @@ int main_square() {
         signTot += sign;
         // std::cout << "sign = " << sign << " raw sign = " << rawSign << "\n";
         if ((i % 10) == 0)
-            std::cout << "iter = " << i << " sign ave = " << signTot / double(i + 1) << " current sign= " << sign
+            std::cout << "iter = " << i << " sign ave = " << signTot / double(i + 1) << " raw sign ave= " << rawSignTot / double(i + 1) 
                       << " energy=" << energy / signTot << "\n";
     }
     // std::cout << pfqmc.g << "\n";

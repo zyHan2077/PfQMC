@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <ctime>
+#include <fstream>
 
 #include "../inc/square.h"
 #include "../inc/pfqmc.h"
@@ -46,4 +47,35 @@ TEST(SquareTest, SignTest) {
     // std::cout << "signK = " << signK << " signKhalf = " << signKHalf << "\n";
     EXPECT_NEAR(std::abs(signK - 1.0), 0.0, 1e-10);
     EXPECT_NEAR(std::abs(signKHalf - 1.0), 0.0, 1e-10);
+}
+
+TEST(SquareTest, errorSignCatcher) {
+    std::fstream myfile;
+    myfile.open("../doc/1.dat", std::fstream::in);
+    int L = 32;
+    MatType G1(L, L);
+    MatType G2(L, L);
+    DataType tmp;
+    for(int i=0; i<L; i++) {
+        for(int j=0; j<L; j++) {
+            myfile >> G1(i, j);
+        }
+    }
+
+    for(int i=0; i<L; i++) {
+        for(int j=0; j<L; j++) {
+            myfile >> G2(i, j);
+        }
+        // std::cout << G2(i, 0) << "\n";
+    }
+    myfile.close();
+
+    MatType G1copy = G1;
+    MatType G2copy = G2;
+    std::cout << G2 << "\n=======\n";
+
+    std::cout << "pfaffian of G1 " << pfaf(L/2, G1copy) << "\n";
+    std::cout << "pfaffian of G2 " << pfaf(L/2, G2copy) << "\n";
+    std::cout << "pfaffian of G1+G2 " << pfaffianForSignOfProduct(G1, G2, true) << "\n";
+    std::cout << G2 << "\n=======\n";
 }

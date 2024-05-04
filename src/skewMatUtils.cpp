@@ -4,6 +4,7 @@
 // entirely on MKL/BLAS dense matrix utilities
 
 #include"skewMatUtils.h"
+#include <fstream>
 
 // after the Householder transformation
 // A is brought into tri-diagonalized form
@@ -179,15 +180,46 @@ void generateMatForEta(const MatType& H, MatType& A) {
     return r;
 }
 
-DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2) {
+DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2, bool diagno) {
     int n = G1.cols() / 2;
     MatType A = MatType::Zero(4*n, 4*n);
     A.block(0, 0, 2*n, 2*n) = G1;
     A.block(2*n, 2*n, 2*n, 2*n) = G2;
     A.block(0, 2*n, 2*n, 2*n) = - MatType::Identity(2*n, 2*n);
     A.block(2*n, 0, 2*n, 2*n) = MatType::Identity(2*n, 2*n);
+    
+    MatType Acopy = A;
 
     DataType r = signOfPfaf(A);
+
+    if (diagno) {
+        if (std::abs(r.real()) < 0.99 ) {
+            std::cout << " ===== begin writing ==== \n";
+            std::cout << "pf(Acopy) = " << pfaf(2*n, Acopy) << "\n";
+            std::fstream myfile;
+            myfile.open("1.dat", std::fstream::out);
+            std::cout << " r = " << r << "\n";
+            myfile << " r = " << r << "\n";
+            for(int i=0; i<2*n; i++) {
+                for(int j=0; j<2*n; j++) {
+                    myfile << G1(i, j) << " ";
+                    std::cout << ".";
+                }
+                myfile << "\n";
+            }
+
+            myfile << "\n\n\n";
+
+            for(int i=0; i<2*n; i++) {
+                for(int j=0; j<2*n; j++) {
+                    myfile << G2(i, j) << " ";
+                }
+                myfile << "\n";
+            }
+            std::cout << " ===== end writing ==== \n";
+            myfile.close();
+        }
+    }
     return r;
 }
 
