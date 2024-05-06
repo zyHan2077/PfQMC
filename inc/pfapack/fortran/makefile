@@ -17,7 +17,7 @@ OBJECTS= slasktrd.o slasktrf.o sskbpf10.o sskbpfa.o sskbtrd.o \
 # FORT = gfortran
 # FFLAGS = -O3 -fimplicit-none
 
-FORT = ifx
+FORT = ifort
 FFLAGS = -O3
 
 all: $(OBJECTS)
