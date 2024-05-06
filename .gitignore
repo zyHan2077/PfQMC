@@ -5,3 +5,7 @@ build/
 obj/
 bin/
 data/
+*.o
+inc/pfapack/**/*.a
+*.mod
+inc/pfapack/**/*.out

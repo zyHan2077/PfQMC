@@ -137,7 +137,7 @@ DataType PfQMC::getSignRaw()
         signNext = op_array[i]->getSignOfWeight();
         // std::cout << gNext << "==== gnext ====\n \n";
         // std::cout << gCur << "==== gcur ====\n \n";
-        signPfaf = pfaffianForSignOfProduct(gNext, gCur, true);
+        signPfaf = pfaffianForSignOfProduct(gNext, gCur);
         // std::cout << "Raw sCur, sNext, sPfaf=" << signCur << " " << signNext << " " << signPfaf << "\n"; 
         signCur = (signCur * signNext * signPfaf * extraSign);
 

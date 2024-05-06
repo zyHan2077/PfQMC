@@ -84,13 +84,13 @@ int main_square() {
         pfqmc.leftSweep();
         sign = pfqmc.sign;
 
-        // rawSign = pfqmc.getSignRaw();
-        // rawSignTot += rawSign;
-        // double deviation = std::abs(sign - rawSign);
-        // if (deviation > 1e-2) {
-        //     // pfqmc.sign = rawSign; // update sign
-        //     std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
-        // }
+        rawSign = pfqmc.getSignRaw();
+        rawSignTot += rawSign;
+        double deviation = std::abs(sign - rawSign);
+        if (deviation > 1e-2) {
+            pfqmc.sign = rawSign; // update sign
+            std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
+        }
 
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
         signTot += sign;

@@ -35,13 +35,14 @@ add_executable(main ./main.cpp ${SRC_LIST})
 target_compile_options(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
-
+target_link_libraries(main PUBLIC ${PROJECT_SOURCE_DIR}/inc/pfapack/c_interface/libcpfapack.a ${PROJECT_SOURCE_DIR}/inc/pfapack/fortran/libpfapack.a)
 
 set(TEST_LIST ./test/main_test.cpp ./test/squareLatticeTest.cpp)
 add_executable(main_test ${TEST_LIST}  ${SRC_LIST})
 target_compile_options(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(main_test PUBLIC $<LINK_ONLY:MKL::MKL> GTest::gtest_main)
+target_link_libraries(main_test PUBLIC ${PROJECT_SOURCE_DIR}/inc/pfapack/c_interface/libcpfapack.a ${PROJECT_SOURCE_DIR}/inc/pfapack/fortran/libpfapack.a)
 
 include(GoogleTest)
 gtest_discover_tests(main_test)

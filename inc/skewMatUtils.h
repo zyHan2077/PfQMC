@@ -3,10 +3,16 @@
 
 #include "types.h"
 #include<iostream>
+#include "../inc/pfapack/c_interface/pfapack.h"
 
 // x^\dagger . x
 void complexNorm2(const DataType* x, MKL_INT len, DataType* res);
 
+/*
+ * Householder is significantly slower than the Parlett-Reid approach
+ * provided by the PFAPACK.
+ * This routine is only for test purpose.
+*/ 
 void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataType* kVec);
 
 DataType matDet(uint L, DataType* mat, lapack_int* temp);
@@ -48,7 +54,7 @@ void generateMatForEta(const MatType& H, MatType& A);
 DataType signOfPfaf(MatType& A);
 DataType pfaffianForEta(const MatType &H);
 DataType pfaffianForSignOfEta(const MatType &H);
-DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2, bool diagno=false);
+DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2 /*, bool diagno=false*/);
 
 DataType signOfHamiltonian(const MatType &H);
 

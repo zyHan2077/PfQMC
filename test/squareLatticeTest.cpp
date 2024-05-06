@@ -5,6 +5,7 @@
 
 #include "../inc/square.h"
 #include "../inc/pfqmc.h"
+#include "../inc/pfapack/c_interface/pfapack.h"
 
 TEST(SinhTest, SinhH) {
     int nDim = 20;
@@ -49,9 +50,54 @@ TEST(SquareTest, SignTest) {
     EXPECT_NEAR(std::abs(signKHalf - 1.0), 0.0, 1e-10);
 }
 
-TEST(SquareTest, errorSignCatcher) {
+// TEST(SquareTest, errorSignCatcher) {
+//     std::fstream myfile;
+//     myfile.open("../doc/1.dat", std::fstream::in);
+//     int L = 32;
+//     MatType G1(L, L);
+//     MatType G2(L, L);
+//     DataType tmp;
+//     for(int i=0; i<L; i++) {
+//         for(int j=0; j<L; j++) {
+//             myfile >> G1(i, j);
+//         }
+//     }
+
+//     for(int i=0; i<L; i++) {
+//         for(int j=0; j<L; j++) {
+//             myfile >> G2(i, j);
+//         }
+//         // std::cout << G2(i, 0) << "\n";
+//     }
+//     myfile.close();
+
+//     G1 = 0.5 * (G1 - G1.transpose());
+//     // std::cout << G2 << "\n====G2Raw===\n\n";
+//     // std::cout << G2.transpose() << "\n====G2RawTrans===\n\n";
+//     // std::cout << 0.5 * (G2 - G2.transpose()) << "\n====G2Raw - Trans===\n\n";
+//     MatType G3 = 0.5 * (G2 - G2.transpose());
+//     std::cout << G3 << "\n====G3===\n\n";
+//     G2 = 0.5 * (G2 - G2.transpose().eval());
+//     std::cout << G2 << "\n====G2Skew===\n\n";
+//     // G2 = G3;
+
+//     MatType G1copy = G1;
+//     MatType G2copy = G2;
+//     std::cout << G1 << "\n====G1===\n";
+//     std::cout << G2 << "\n====G2Skew===\n";
+
+//     DataType detg2 = G2copy.determinant();
+//     DataType pfg2 = pfaf(L/2, G2copy);
+
+//     std::cout << "pfaffian of G1 " << pfaf(L/2, G1copy) << "\n";
+//     std::cout << "pfaffian of G2 " << pfg2 << " " << detg2 << " error=" << std::abs(pfg2 * pfg2 - detg2) << "\n";
+//     std::cout << "pfaffian of G1+G2 " << pfaffianForSignOfProduct(G1, G2, false) << "\n";
+//     // std::cout << G2 << "\n=======\n";
+// }
+
+TEST(PFAPACKTEST, SKTRD) {
     std::fstream myfile;
-    myfile.open("../doc/1.dat", std::fstream::in);
+    myfile.open("../test/1.dat", std::fstream::in);
     int L = 32;
     MatType G1(L, L);
     MatType G2(L, L);
@@ -69,13 +115,11 @@ TEST(SquareTest, errorSignCatcher) {
         // std::cout << G2(i, 0) << "\n";
     }
     myfile.close();
-
-    MatType G1copy = G1;
     MatType G2copy = G2;
-    std::cout << G2 << "\n=======\n";
+    DataType pf = pfaf(L/2, G2copy);
+    // std::cout << "pf G2 = " << pf << "\n";
+    EXPECT_NEAR(std::abs(pf - (831715.0+287.442i)), 0.0, 1.0);
 
-    std::cout << "pfaffian of G1 " << pfaf(L/2, G1copy) << "\n";
-    std::cout << "pfaffian of G2 " << pfaf(L/2, G2copy) << "\n";
-    std::cout << "pfaffian of G1+G2 " << pfaffianForSignOfProduct(G1, G2, true) << "\n";
-    std::cout << G2 << "\n=======\n";
+    DataType signPf = pfaffianForSignOfProduct(G1, G2);
+    EXPECT_NEAR(std::abs(signPf - 1.0), 0.0, 1e-4);
 }

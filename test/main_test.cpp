@@ -36,7 +36,7 @@ TEST(PfaffianTest, SimpleIntegerMatrix) {
         MatType ABlock = A(Eigen::seq(0, l - 1), Eigen::seq(0, l - 1));
         DataType pf = pfaf(l / 2, ABlock);
         double pf0 = result[(l / 2) - 1];
-        EXPECT_NEAR((pf.real() - pf0) / pf0, 0.0, 1e-10) << "failed with l = " << l << "and pf = " << pf << "\n";
+        EXPECT_NEAR((pf.real() - pf0) / pf0, 0.0, 1e-10) << "failed with l = " << l << " and pf = " << pf << " pf0 = " << pf0 << "\n";
     }
 }
 

@@ -105,7 +105,7 @@ void SkewMatHouseholder_PureMKL(const int N, DataType* A, DataType* temp, DataTy
 
 // Wrapper function for pfaffian calculation
 // A is 2N*2N matrix, temp is a 4N vector
-DataType pfaf(const int N, MatType& A) {
+DataType pfaf_Householder(const int N, MatType& A) {
     DataType r = 1;
     cVecType kVec = cVecType::Zero(N);
     cVecType temp(4*N);
@@ -116,7 +116,26 @@ DataType pfaf(const int N, MatType& A) {
     return r;
 }
 
-DataType signOfPfaf(MatType& A) {
+DataType pfaf(const int N, MatType& A) {
+    DataType r = 1;
+    int ipiv[2*N];
+    int m = sktrf(2*N, A.data(), ipiv, "U", "P");
+    if (m < 0) {
+        std::cout << "sktrf exit with error = " << m << "\n";
+        return 1.0;
+    }
+    // std::cout << "A = " << A << "=====\n\n";
+    // for(int i=0; i<2*N; i++) std::cout << ipiv[i] << " ";
+    // std::cout << "\n";
+    for(int i=0; i<2*N; i+=2) {
+        r *= A(i, i+1);
+        // std::cout << "Ai i+1 = " << A(i, i+1) << " ";
+        if (ipiv[i] != (i+1)) r = -r;
+    }
+    return r;
+}
+
+DataType signOfPfaf_Householder(MatType& A) {
     const int N = (A.cols() / 2);
     DataType r = 1.0;
     cVecType kVec = cVecType::Zero(N);
@@ -127,6 +146,27 @@ DataType signOfPfaf(MatType& A) {
         // std::cout << "kVec i=" << i << " " << kVec(i) << "\n";
         if (kVec(i) == 0.0) return 0.0; // TODO: DBL check?
         r *= kVec(i) / std::abs(kVec(i));
+    }
+    return r;
+}
+
+DataType signOfPfaf(MatType& A) {
+    const int L = A.cols();
+    DataType r = 1.0;
+    DataType tmp;
+    int ipiv[L];
+    // cVecType temp(4*N);
+    // MatType B = A;
+    int m = sktrf(L, A.data(), ipiv, "U", "P");
+    if (m < 0) {
+        std::cout << "sktrf exit with error = " << m << "\n";
+        return 1.0;
+    }
+
+    for(int i=0; i<L; i+=2) {
+        tmp = A(i, i+1);
+        r *= tmp / std::abs(tmp);
+        if (ipiv[i] != (i+1)) r = -r;
     }
     return r;
 }
@@ -180,7 +220,7 @@ void generateMatForEta(const MatType& H, MatType& A) {
     return r;
 }
 
-DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2, bool diagno) {
+DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2/*, bool diagno*/) {
     int n = G1.cols() / 2;
     MatType A = MatType::Zero(4*n, 4*n);
     A.block(0, 0, 2*n, 2*n) = G1;
@@ -188,38 +228,38 @@ DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2, bool dia
     A.block(0, 2*n, 2*n, 2*n) = - MatType::Identity(2*n, 2*n);
     A.block(2*n, 0, 2*n, 2*n) = MatType::Identity(2*n, 2*n);
     
-    MatType Acopy = A;
+    // MatType Acopy = A;
 
     DataType r = signOfPfaf(A);
 
-    if (diagno) {
-        if (std::abs(r.real()) < 0.99 ) {
-            std::cout << " ===== begin writing ==== \n";
-            std::cout << "pf(Acopy) = " << pfaf(2*n, Acopy) << "\n";
-            std::fstream myfile;
-            myfile.open("1.dat", std::fstream::out);
-            std::cout << " r = " << r << "\n";
-            myfile << " r = " << r << "\n";
-            for(int i=0; i<2*n; i++) {
-                for(int j=0; j<2*n; j++) {
-                    myfile << G1(i, j) << " ";
-                    std::cout << ".";
-                }
-                myfile << "\n";
-            }
+    // if (diagno) {
+    //     if (std::abs(r.real()) < 0.99 ) {
+    //         std::cout << " ===== begin writing ==== \n";
+    //         std::cout << "pf(Acopy) = " << pfaf(2*n, Acopy) << "\n";
+    //         std::fstream myfile;
+    //         myfile.open("1.dat", std::fstream::out);
+    //         std::cout << " r = " << r << "\n";
+    //         myfile << " r = " << r << "\n";
+    //         for(int i=0; i<2*n; i++) {
+    //             for(int j=0; j<2*n; j++) {
+    //                 myfile << G1(i, j) << " ";
+    //                 std::cout << ".";
+    //             }
+    //             myfile << "\n";
+    //         }
 
-            myfile << "\n\n\n";
+    //         myfile << "\n\n\n";
 
-            for(int i=0; i<2*n; i++) {
-                for(int j=0; j<2*n; j++) {
-                    myfile << G2(i, j) << " ";
-                }
-                myfile << "\n";
-            }
-            std::cout << " ===== end writing ==== \n";
-            myfile.close();
-        }
-    }
+    //         for(int i=0; i<2*n; i++) {
+    //             for(int j=0; j<2*n; j++) {
+    //                 myfile << G2(i, j) << " ";
+    //             }
+    //             myfile << "\n";
+    //         }
+    //         std::cout << " ===== end writing ==== \n";
+    //         myfile.close();
+    //     }
+    // }
     return r;
 }
 
