@@ -82,6 +82,9 @@ jobs:
     
     - name: install Gtest
       run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+    
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
 
     - name: install pfapack
       run: cd inc/pfapack/fortran && make && cd ../c_interface && make && cd ../../..

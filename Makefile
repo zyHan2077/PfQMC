@@ -3,6 +3,7 @@ CC = mpiicpc -mkl -O2 -xCORE-AVX512
 
 # Flags
 CFLAGS = -std=c++17 -I $(EIGEN3_INCLUDE_DIR) -w
+LFLAGS = ./inc/pfapack/fortran/libpfapack.a ./inc/pfapack/c_interface/libcpfapack.a
 
 # Source directories
 SRC_DIR = src
@@ -18,14 +19,14 @@ OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Compile and link
 $(BDIR)/main: $(OBJS) $(OBJ_DIR)/main.o
-		$(CC) $(CFLAGS) $(OBJS) $(OBJ_DIR)/main.o -o $@ 
+		$(CC) $(CFLAGS) $(OBJS) $(OBJ_DIR)/main.o -o $@ $(LFLAGS)
 
 # Compile C++ source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-		$(CC) $(CFLAGS) -c $< -o $@ -I $(INC_DIR)
+		$(CC) $(CFLAGS) -c $< -o $@ -I $(INC_DIR) $(LFLAGS)
 
 $(OBJ_DIR)/main.o:
-		$(CC) $(CFLAGS) -c main.cpp -o $@ -I $(INC_DIR)
+		$(CC) $(CFLAGS) -c main.cpp -o $@ -I $(INC_DIR) $(LFLAGS)
 
 
 .PHONY: clean

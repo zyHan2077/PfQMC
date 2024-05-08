@@ -79,25 +79,26 @@ int main_square() {
     DataType signTot = 0.0;
     DataType rawSignTot = 0.0;
     DataType rawSign = 1.0;
+    // pfqmc.sign = 1.0;
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         sign = pfqmc.sign;
 
-        rawSign = pfqmc.getSignRaw();
+        // rawSign = pfqmc.getSignRaw();
         rawSignTot += rawSign;
-        double deviation = std::abs(sign - rawSign);
-        if (deviation > 1e-2) {
-            pfqmc.sign = rawSign; // update sign
-            std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
-        }
+        // double deviation = std::abs(sign - rawSign);
+        // if (deviation > 1e-2) {
+        //     pfqmc.sign = rawSign; // update sign
+        //     std::cout << "\n=== error in sign at round = " << i << " raw sign = " << rawSign << " ≠ " << sign << "==== \n"; 
+        // }
 
         energy += sign * config.energyFromGreensFunc(pfqmc.g);
         signTot += sign;
         // std::cout << "sign = " << sign << " raw sign = " << rawSign << "\n";
         if ((i % 10) == 0)
             std::cout << "iter = " << i << " sign ave = " << signTot / double(i + 1) << " raw sign ave= " << rawSignTot / double(i + 1) 
-                      << " energy=" << energy / signTot << "\n";
+                      << " energy=" << energy / signTot << " curSign = "  <<  sign << "\n";
     }
     // std::cout << pfqmc.g << "\n";
 

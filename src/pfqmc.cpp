@@ -1,4 +1,6 @@
 #include "pfqmc.h"
+#include <fstream>
+#include <iomanip>
 
 PfQMC::PfQMC(Spinless_tV *walker, int _stb)
 {
@@ -147,6 +149,44 @@ DataType PfQMC::getSignRaw()
         op_array[i]->stabilizedLeftMultiply(A);
         A.onePlusInv(gCur);
         gCur -= identity;
+        // if(std::abs(gCur(0, 0))>1e-4) {
+        //     std::cout << " ===== begin writing ==== \n";
+        //     int n = A.nDim;
+        //     // std::cout << "pf(Acopy) = " << pfaf(2*n, Acopy) << "\n";
+        //     std::fstream myfile;
+        //     myfile.open("1.dat", std::fstream::out);
+        //     // std::cout << " r = " << r << "\n";
+        //     // myfile << " r = " << r << "\n";
+        //     A.onePlusInv(gCur);
+        //     int npre = 20;
+        //     std::cout << std::setprecision(npre) << "A.U = \n" << A.U << "\n";
+        //     std::cout << std::setprecision(npre) << "A.D = \n" << A.D << "\n";
+        //     std::cout << std::setprecision(npre) << "gCur = \n" << gCur << "\n"; 
+        //     for(int i=0; i<n; i++) {
+        //         for(int j=0; j<n; j++) {
+        //             myfile<< std::setprecision(npre) << A.U(i, j) << " ";
+        //             std::cout << ".";
+        //         }
+        //         myfile << "\n";
+        //     }
+
+        //     myfile << "\n\n\n";
+
+        //     for(int i=0; i<n; i++) {
+        //         myfile<< std::setprecision(npre) << A.D(i) << " ";
+        //     }
+
+        //     myfile << "\n\n\n";
+
+        //     for(int i=0; i<n; i++) {
+        //         for(int j=0; j<n; j++) {
+        //             myfile<< std::setprecision(npre) << A.T(i, j) << " ";
+        //         }
+        //         myfile << "\n";
+        //     }
+        //     std::cout << " ===== end writing ==== \n";
+        //     myfile.close();
+        // }
     }
     return signCur;
 }
