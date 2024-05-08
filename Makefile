@@ -3,7 +3,7 @@ CC = mpiicpc -mkl -O2 -xCORE-AVX512
 
 # Flags
 CFLAGS = -std=c++17 -I $(EIGEN3_INCLUDE_DIR) -w
-LFLAGS = ./inc/pfapack/fortran/libpfapack.a ./inc/pfapack/c_interface/libcpfapack.a
+LFLAGS = ./inc/pfapack/c_interface/libcpfapack.a  ./inc/pfapack/fortran/libpfapack.a
 
 # Source directories
 SRC_DIR = src
@@ -32,4 +32,5 @@ $(OBJ_DIR)/main.o:
 .PHONY: clean
 
 clean:
-		rm -f $(OBJS) $(OBJ_DIR)/main.o $(BDIR)/main 
+		rm -f $(OBJS) $(OBJ_DIR)/main.o $(BDIR)/main
+

@@ -150,54 +150,6 @@ public:
             }
         }
     }
-
-    // // Generate the Greens function for single slice
-    // inline void InteractionTanhGenerator(MatType &H, const iVecType &s, const int bondType, bool inv=false) const override {
-    //     DataType tmp = (1.0i) * tanh(0.5 * lambdaV);
-    //     if (inv) {
-    //         tmp = (-1.0) / tmp;
-    //     }
-
-    //     int idx1, idx2, idUnitcell;
-    //     for (int i=0; i<Lx; i++) {
-    //         for (int j=0; j<Ly; j++) {
-    //             idUnitcell = unitCellCoord2Idx(i, j);
-    //             for (int k=0; k<2; k++) {
-    //                 idx1 = majoranaCoord2Idx(i, j, 0, k);
-    //                 idx2 = neighborSiteIdx(i, j, k, bondType);
-    //                 // std::cout << idx1 << " " << idx2 << "\n";
-    //                 H(idx1, idx2) += -tmp * double(s(idUnitcell));
-    //                 H(idx2, idx1) += +tmp * double(s(idUnitcell));
-    //             }
-    //         }
-    //     }
-    // }
-
-    // Directly generate B by directly writing each 2*2 block
-    // B should be initialized as Identity
-    // inline void InteractionBGenerator(MatType &B, const iVecType &s, const int bondType, bool inv=false) const override {
-    //     DataType ch = chlV;
-    //     DataType ish = (1.0i) * shlV;
-    //     if (inv) ish = -ish;
-
-    //     int idx1, idx2, idUnitcell;
-    //     for (int i=0; i<Lx; i++) {
-    //         for (int j=0; j<Ly; j++) {
-    //             idUnitcell = unitCellCoord2Idx(i, j);
-    //             for (int k=0; k<2; k++) {
-    //                 idx1 = majoranaCoord2Idx(i, j, 0, k);
-    //                 idx2 = neighborSiteIdx(i, j, k, bondType);
-    //                 // std::cout << "(" << idx1 << "," << idx2 << "\n";
-    //                 //  |   \cosh(\lambda)           ,  -i \sinh(\lambda) \sigma |
-    //                 //  |  +i \sinh(\lambda) \sigma  ,   \cosh(\lambda)          |
-    //                 B(idx1, idx1) = ch;
-    //                 B(idx2, idx2) = ch;
-    //                 B(idx1, idx2) = +ish * double(s(idUnitcell));
-    //                 B(idx2, idx1) = -ish * double(s(idUnitcell));
-    //             }
-    //         }
-    //     }
-    // }
 };
 
 // class SpinlessTvHoneycombUtils;
