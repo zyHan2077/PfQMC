@@ -17,25 +17,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  free-disk-space:
-    runs-on: ubuntu-latest
-    steps:
+  # free-disk-space:
+  #   runs-on: ubuntu-latest
+  #   steps:
 
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # if set to "true" but frees about 6 GB
-        tool-cache: true
+  #   - name: Free Disk Space (Ubuntu)
+  #     uses: jlumbroso/free-disk-space@main
+  #     with:
+  #       # this might remove tools that are actually needed,
+  #       # if set to "true" but frees about 6 GB
+  #       tool-cache: true
         
-        # all of these default to true, but feel free to set to
-        # "false" if necessary for your workflow
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
+  #       # all of these default to true, but feel free to set to
+  #       # "false" if necessary for your workflow
+  #       android: true
+  #       dotnet: true
+  #       haskell: true
+  #       large-packages: true
+  #       docker-images: true
+  #       swap-storage: true
 
   build-and-test:
     needs: free-disk-space
@@ -82,12 +82,9 @@ jobs:
     
     - name: install Gtest
       run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
-    
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
 
     - name: install pfapack
-      run: cd inc/pfapack/fortran && make && cd ../c_interface && make && cd ../../..
+      run: export PATH=/opt/intel/oneapi/compiler/2024.1/bin:$PATH && cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make && cd ../../..
         
     - name: CMake Configure 
       run: cmake -B build -DEIGEN3_INCLUDE_DIR=/opt
@@ -98,3 +95,8 @@ jobs:
     - name: Run test
       timeout-minutes: 10
       run: ctest --test-dir build -V
+
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
+      timeout-minutes: 10
