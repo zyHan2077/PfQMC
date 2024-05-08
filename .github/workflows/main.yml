@@ -38,7 +38,7 @@ jobs:
   #       swap-storage: true
 
   build-and-test:
-    needs: free-disk-space
+    # needs: free-disk-space
     runs-on: ubuntu-latest
 
     steps:
