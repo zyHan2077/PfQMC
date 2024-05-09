@@ -101,6 +101,26 @@ class SpinlessTvHoneycombSingleMajoranaUtils : public SpinlessTvUtils {
         }
         return r;
     }
+
+    // The structure factor is defined by:
+    // S(k) = 1/N^2 \sum_{i,j} s_{ij} <(n_i - 1/2)(n_j - 1/2)>
+    //      = 1/(4 N^2) \sum_{i,j} s_{ij} <\gamma^1_i \gamma^1_j> <\gamma^2_i \gamma^2_j>
+    // where s_{ij} is :
+    // +1 if i and j are in the same unit cell
+    // -1 if i and j are in different unit cells
+    inline DataType structureFactorCDW(const MatType &g) {
+        DataType r = 0.0;
+        for (int i=0; i<nsites; i++) {
+            for (int j=0; j<nsites; j++) {
+                if ( (i+j) % 2 == 0 ) {
+                    r += g(i, j) * g(i, j);
+                } else {
+                    r -= g(i, j) * g(i, j);
+                }
+            }
+        }
+        return r / (4.0 * nsites * nsites);
+    }
 };
 
 class HoneycombSingleMajorana_tV : public Spinless_tV {
