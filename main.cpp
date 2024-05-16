@@ -72,7 +72,7 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
     HoneycombSingleMajorana_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     for (int i = 0; i < thermalLength; i++) {
-	std::cout << i << " ";
+	    std::cout << i << " ";
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         // std::cout << i << std::endl;
@@ -93,7 +93,7 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
             if (std::abs(sign - signRaw) > 1e-2) {
                 std::cout << "\n=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
             }
-	    // pfqmc.sign = signRaw;
+	        // pfqmc.sign = signRaw;
         }
 
         // srSignTot += sign;
