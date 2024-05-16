@@ -53,9 +53,9 @@ int main_honeycomb() {
     return 0;
 }
 
-int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V) {
+int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, int nthreads) {
     double start_time = omp_get_wtime();
-    mkl_set_num_threads(8);
+    mkl_set_num_threads(nthreads);
 
     // int Lx = 10;
     // int Ly = 10;
@@ -72,10 +72,12 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V) 
     HoneycombSingleMajorana_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     for (int i = 0; i < thermalLength; i++) {
+	std::cout << i << " ";
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         // std::cout << i << std::endl;
     }
+    std::cout << std::endl;
 
     DataType energy = 0.0;
     DataType structureFactorCDW = 0.0;
@@ -91,7 +93,7 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V) 
             if (std::abs(sign - signRaw) > 1e-2) {
                 std::cout << "\n=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
             }
-            pfqmc.sign = signRaw;
+	    // pfqmc.sign = signRaw;
         }
 
         // srSignTot += sign;
@@ -181,15 +183,16 @@ int main(int argc, char* argv[]) {
     } else if (std::strcmp(argv[1], "--honeycomb") == 0) {
         return main_honeycomb();
     } else if (std::strcmp(argv[1], "--SRhoneycomb") == 0) {
-        int Lx, Ly, LTau;
+        int Lx, Ly, LTau, nthreads;
         double dt, V;
         Lx = std::stoi(argv[2]);
         Ly = std::stoi(argv[3]);
         LTau = std::stoi(argv[4]);
         dt = std::stod(argv[5]);
         V = std::stod(argv[6]);
+        nthreads = std::stoi(argv[7]);
         // fstream fin()
-        return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V);
+        return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         return 0;

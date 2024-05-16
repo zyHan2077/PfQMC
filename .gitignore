@@ -9,3 +9,5 @@ data/
 inc/pfapack/**/*.a
 *.mod
 inc/pfapack/**/*.out
+slurm-**.out
+.virtual_documents/
