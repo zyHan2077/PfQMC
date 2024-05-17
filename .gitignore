@@ -11,3 +11,5 @@ inc/pfapack/**/*.a
 inc/pfapack/**/*.out
 slurm-**.out
 .virtual_documents/
+**.pl
+**.sh

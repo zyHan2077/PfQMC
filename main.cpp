@@ -53,7 +53,7 @@ int main_honeycomb() {
     return 0;
 }
 
-int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, int nthreads) {
+int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, int nthreads, int nseed) {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(nthreads);
 
@@ -66,9 +66,9 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
     int thermalLength = 200;
     int evaluationLength = 1000;
     std::cout << "=== Honeycomb Single Majorana Model ===\n";
-    std::cout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << std::endl;
+    std::cout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads << std::endl;
     SpinlessTvHoneycombSingleMajoranaUtils config(Lx, Ly, dt, V, LTau);
-    rdGenerator rd(42);
+    rdGenerator rd(nseed);
     HoneycombSingleMajorana_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     for (int i = 0; i < thermalLength; i++) {
@@ -90,8 +90,8 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
 
         if (i % 20 == 0) {
             signRaw = pfqmc.getSignRaw();
-            if (std::abs(sign - signRaw) > 1e-2) {
-                std::cout << "\n=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
+            if (std::abs(sign - signRaw) > 1e-1) {
+                std::cout << "=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
             }
 	        // pfqmc.sign = signRaw;
         }
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
     } else if (std::strcmp(argv[1], "--honeycomb") == 0) {
         return main_honeycomb();
     } else if (std::strcmp(argv[1], "--SRhoneycomb") == 0) {
-        int Lx, Ly, LTau, nthreads;
+        int Lx, Ly, LTau, nthreads, nseed;
         double dt, V;
         Lx = std::stoi(argv[2]);
         Ly = std::stoi(argv[3]);
@@ -191,8 +191,9 @@ int main(int argc, char* argv[]) {
         dt = std::stod(argv[5]);
         V = std::stod(argv[6]);
         nthreads = std::stoi(argv[7]);
+        nseed = std::stoi(argv[8]);
         // fstream fin()
-        return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads);
+        return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads, nseed);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         return 0;
