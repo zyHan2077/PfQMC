@@ -5,6 +5,7 @@
 #include "inc/pfqmc.h"
 #include "inc/square.h"
 #include "inc/singleMajoranaHoneycomb.h"
+#include "inc/kitaevChain.h"
 
 int main_honeycomb() {
     double start_time = omp_get_wtime();
@@ -172,6 +173,75 @@ int main_square() {
     return 0;
 }
 
+int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength=1000) {
+    double start_time = omp_get_wtime();
+    mkl_set_num_threads(nthreads);
+
+    int stabilizationTime = 10;
+    int thermalLength = 200;
+    int boundary = 1;
+    // int evaluationLength = 1000;
+
+    // int nDim = Lx * Ly * 4;
+    SpinlessTvChainUtils config(Lx, dt, V, LTau, boundary, delta, 0.0);
+    rdGenerator rd(nseed);
+    Chain_tV walker(&config, &rd);
+    PfQMC pfqmc(&walker, stabilizationTime);
+    // std::cout << "here!\n";
+    std::cout << "=== p-wave Chain Model ===\n";
+    std::cout << "Lx = " << Lx << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads
+    << " delta = " << delta << " boundary = " << boundary << std::endl;
+    // std::cout << "here!" << std::endl;
+    for (int i = 0; i < thermalLength; i++) {
+        std::cout << i << " ";
+        pfqmc.rightSweep();
+        pfqmc.leftSweep();
+    }
+    std::cout << std::endl;
+
+    DataType energy = 0.0;
+    // DataType structureFactorCDW = 0.0;
+    DataType sign, signRaw;
+
+    DataType SignTot = 0.0;
+    DataType energyTot = 0.0; // for quick check
+
+    for (int i = 0; i < evaluationLength; i++) {
+        pfqmc.rightSweep();
+        pfqmc.leftSweep();
+        sign = pfqmc.sign;
+
+        if (i % 20 == 0) {
+            signRaw = pfqmc.getSignRaw();
+            if (std::abs(sign - signRaw) > 1e-2) {
+                std::cout << "=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
+            }
+	        // pfqmc.sign = signRaw;
+        }
+        
+        // srSignTot += sign;
+        energy = config.energyFromGreensFunc(pfqmc.g);
+
+        SignTot += sign;
+        energyTot += sign * energy; // for quick check
+        // structureFactorCDW = config.structureFactorCDW(pfqmc.g);
+        // std::cout << "iter = " << i << " energy = " << energy 
+        // // << " structureFactorCDW = " << structureFactorCDW 
+        // << " MRsign = " << pfqmc.sign << "\n";
+
+        if ((i % 20) == 0)
+            std::cout << " \n iter = " << i << " AveEnergy=" << energyTot / SignTot << " AveSign = " << SignTot / double(i + 1) 
+            //<< " structureFactorCDW = " << structureFactorCDW / double(i + 1)
+                      << "\n";
+    }
+    // std::cout << pfqmc.g << "\n";
+
+    double time = omp_get_wtime() - start_time;
+    std::cout << "=== End of p-wave Chain Model ===\n";
+    std::cout << "total time " << time << std::endl;
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "Usage: " << argv[0] << " --square | --honeycomb | --SRhoneycomb\n";
@@ -194,6 +264,18 @@ int main(int argc, char* argv[]) {
         nseed = std::stoi(argv[8]);
         // fstream fin()
         return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads, nseed);
+    } else if (std::strcmp(argv[1], "--chain") == 0) {
+        int Lx, LTau, nthreads, nseed, evaluationLength;
+        double dt, V, delta;
+        Lx = std::stoi(argv[2]);
+        LTau = std::stoi(argv[3]);
+        dt = std::stod(argv[4]);
+        V = std::stod(argv[5]);
+        delta = std::stod(argv[6]);
+        nthreads = std::stoi(argv[7]);
+        nseed = std::stoi(argv[8]);
+        evaluationLength = std::stoi(argv[9]);
+        return main_chain(Lx, LTau, dt, V, delta, nthreads, nseed, evaluationLength);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         return 0;
