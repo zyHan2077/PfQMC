@@ -194,22 +194,30 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     // std::cout << "here!" << std::endl;
     for (int i = 0; i < thermalLength; i++) {
         std::cout << i << " ";
+        // std::cout << "sign = " << pfqmc.sign << "\n";
         pfqmc.rightSweep();
         pfqmc.leftSweep();
     }
     std::cout << std::endl;
 
-    DataType energy = 0.0;
+    // DataType energy = 0.0;
     // DataType structureFactorCDW = 0.0;
     DataType sign, signRaw;
 
     DataType SignTot = 0.0;
-    DataType energyTot = 0.0; // for quick check
+    DataType obsTot = 0.0; // for quick check
+    DataType obsZ2Tot = 0.0;
+    DataType g11, g22;
+    DataType SignZ2Tot = 0.0;
 
+    DataType z2, z2Correlator;
+
+    pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         sign = pfqmc.sign;
+        // sign = normalizeToPlusMinus1(sign);
 
         if (i % 20 == 0) {
             signRaw = pfqmc.getSignRaw();
@@ -220,17 +228,24 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         }
         
         // srSignTot += sign;
-        energy = config.energyFromGreensFunc(pfqmc.g);
+        // energy = config.energyFromGreensFunc(pfqmc.g);
+        config.EdgeCorrelator(pfqmc.g, g11, g22);
+        // g11 = config.StructureFactorCDW(pfqmc.g);
+        z2 = config.Z2FermionParity(pfqmc.g);
+        z2Correlator = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
+        std::cout << "iter = " << i << " sign = " << sign << " z2 = " << z2 << " z2Correlator = " << z2Correlator << " g11 = " << g11 << "\n";
 
         SignTot += sign;
-        energyTot += sign * energy; // for quick check
+        SignZ2Tot += sign * (1.0 + z2) / 2.0;
+        obsZ2Tot += sign * (g11 + z2Correlator) / 2.0; // for quick 
+        obsTot += sign * g11;
         // structureFactorCDW = config.structureFactorCDW(pfqmc.g);
         // std::cout << "iter = " << i << " energy = " << energy 
         // // << " structureFactorCDW = " << structureFactorCDW 
         // << " MRsign = " << pfqmc.sign << "\n";
 
         if ((i % 20) == 0)
-            std::cout << " \n iter = " << i << " AveEnergy=" << energyTot / SignTot << " AveSign = " << SignTot / double(i + 1) 
+            std::cout << " \n iter = " << i << " AveObservable=" << obsTot / SignTot << " AveSign = " << SignTot / double(i + 1) << " AveZ2Sign = " << SignZ2Tot / double(i + 1) << " AveZ2Obs = " << obsZ2Tot / SignZ2Tot
             //<< " structureFactorCDW = " << structureFactorCDW / double(i + 1)
                       << "\n";
     }

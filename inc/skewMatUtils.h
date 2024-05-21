@@ -57,5 +57,6 @@ DataType pfaffianForSignOfEta(const MatType &H);
 DataType pfaffianForSignOfProduct(const MatType &G1, const MatType &G2 /*, bool diagno=false*/);
 
 DataType signOfHamiltonian(const MatType &H);
+DataType normalizeToPlusMinus1(DataType x);
 
 #endif

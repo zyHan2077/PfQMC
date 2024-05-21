@@ -271,3 +271,14 @@ DataType signOfHamiltonian(const MatType &H) {
     sign *= pfaffianForSignOfProduct(sinhK, sinhK);
     return sign;
 }
+
+DataType normalizeToPlusMinus1(DataType x) {
+    if (std::abs(x - 1.0) < 1e-2) {
+        return 1.0;
+    } else if (std::abs(x + 1.0) < 1e-2) {
+        return -1.0;
+    } else {
+        std::cout << "Error in sign \n";
+        return 0.0;
+    }
+}

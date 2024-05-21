@@ -5,6 +5,7 @@
 #include "skewMatUtils.h"
 #include "spinless_tV.h"
 #include "types.h"
+#include <iostream>
 
 class  SpinlessTvChainUtils : public SpinlessTvUtils {
   public:
@@ -77,6 +78,92 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
 
             // TODO: mu not implemented yet
         }
+    }
+
+    inline void EdgeCorrelator(const MatType &g, DataType &g11, DataType &g22) {
+        int idx1, idx2;
+        idx1 = majoranaCoord2Idx(0, 0);
+        idx2 = majoranaCoord2Idx(Lx-1, 0);
+        g11 = g(idx1, idx2);
+        idx1 = majoranaCoord2Idx(0, 1);
+        idx2 = majoranaCoord2Idx(Lx-1, 1);
+        g22 = g(idx1, idx2);
+    }
+
+    inline DataType StructureFactorCDW(const MatType &g) const {
+        DataType r = 0.0;
+        int idxi1, idxi2, idxj1, idxj2;
+        for (int i = 0; i < Lx; i++) {
+            for (int j = 0; j < Lx; j++) {
+                idxi1 = majoranaCoord2Idx(i, 0);
+                idxi2 = majoranaCoord2Idx(i, 1);
+                idxj1 = majoranaCoord2Idx(j, 0);
+                idxj2 = majoranaCoord2Idx(j, 1);
+                if ( (i+j) % 2 == 0) {
+                    r += g(idxi1, idxj1) * g(idxi2, idxj2);
+                } else {
+                    r -= g(idxi1, idxj1) * g(idxi2, idxj2);
+                }
+            }
+        }
+
+        return r / (4.0 * Lx * Lx);
+    }
+
+    inline DataType Z2FermionParity(const MatType &g) const {
+        DataType additionalSign;
+        switch (Lx % 4) {
+            case 0:
+                additionalSign = 1.0;
+                break;
+            case 1:
+                additionalSign = -(1.0i);
+                break;
+            case 2:
+                additionalSign = -1.0;
+                break;
+            case 3:
+                additionalSign = (1.0i);
+                break;
+        }
+        MatType gcopy = g;
+        DataType r = additionalSign * pfaf(Lx, gcopy);
+        // std::cout << "Z2FermionParity = " << r << std::endl;
+        return r;
+    }
+
+    inline DataType Z2FermionParityEdgeCorrelator(const MatType &g) const {
+        DataType additionalSign;
+        switch (Lx % 4) {
+            case 0:
+                additionalSign = 1.0;
+                break;
+            case 1:
+                additionalSign = -(1.0i);
+                break;
+            case 2:
+                additionalSign = -1.0;
+                break;
+            case 3:
+                additionalSign = (1.0i);
+                break;
+        }
+
+        int idx1, idx2;
+        idx1 = majoranaCoord2Idx(0, 0);
+        idx2 = majoranaCoord2Idx(Lx-1, 0);
+        iVecType curInd(2*Lx - 2);
+        int count = 0;
+        for (int i = 0; i < 2*Lx; i++) {
+            if (i != idx1 && i != idx2) {
+                curInd(count) = i;
+                count++;
+            }
+        }
+
+        MatType gcopy = g(curInd, curInd);
+
+        return additionalSign * pfaf(Lx-1, gcopy);
     }
 
     inline DataType energyFromGreensFunc(const MatType & g) {
