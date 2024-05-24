@@ -101,14 +101,48 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
                 idxj1 = majoranaCoord2Idx(j, 0);
                 idxj2 = majoranaCoord2Idx(j, 1);
                 if ( (i+j) % 2 == 0) {
-                    r += g(idxi1, idxj1) * g(idxi2, idxj2);
-                } else {
                     r -= g(idxi1, idxj1) * g(idxi2, idxj2);
+                } else {
+                    r += g(idxi1, idxj1) * g(idxi2, idxj2);
                 }
             }
         }
 
         return r / (4.0 * Lx * Lx);
+    }
+
+    inline DataType StructureFactorCDWM4(const MatType &g) const {
+        DataType r = 0.0;
+        int idxi1, idxi2, idxj1, idxj2, idxk1, idxk2, idxl1, idxl2;
+        DataType tmp;
+        for (int i = 0; i < Lx; i++) {
+            for (int j = 0; j < Lx; j++) {
+                for (int k = 0; k < Lx; k++) {
+                    for (int l = 0; l < Lx; l++) {
+                        idxi1 = majoranaCoord2Idx(i, 0);
+                        idxi2 = majoranaCoord2Idx(i, 1);
+                        idxj1 = majoranaCoord2Idx(j, 0);
+                        idxj2 = majoranaCoord2Idx(j, 1);
+                        idxk1 = majoranaCoord2Idx(k, 0);
+                        idxk2 = majoranaCoord2Idx(k, 1);
+                        idxl1 = majoranaCoord2Idx(l, 0);
+                        idxl2 = majoranaCoord2Idx(l, 1);
+                        
+                        tmp = (g(idxi1, idxj1) * g(idxk1, idxl1) +  g(idxi1, idxl1) * g(idxj1, idxk1) - g(idxi1, idxk1) * g(idxj1, idxl1));
+                        
+                        tmp *= (g(idxi2, idxj2) * g(idxk2, idxl2) +  g(idxi2, idxl2) * g(idxj2, idxk2) - g(idxi2, idxk2) * g(idxj2, idxl2));
+
+                        if ( (i+j+k+l) % 2 == 0) {
+                            r += tmp;
+                        } else {
+                            r -= tmp;
+                        }
+                    }
+                }
+            }
+        }
+
+        return r / (16.0 * Lx * Lx * Lx * Lx);
     }
 
     inline DataType Z2FermionParity(const MatType &g) const {

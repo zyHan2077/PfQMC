@@ -230,26 +230,28 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     fout << std::endl;
 
     // DataType energy = 0.0;
-    // DataType structureFactorCDW = 0.0;
+    DataType structureFactorCDW, structureFactorCDWM4;
     DataType sign, signRaw;
     DataType obsZ2, obsEnergy, obsEdgeCorrelator, obsEdgeCorrelatorZ2;
 
     DataType SignTot = 0.0;
     DataType z2PlusSignTot = 0.0;
     DataType z2MinusSignTot = 0.0;
+    DataType structureFactorCDWTot = 0.0;
 
     DataType obsEnergyTot = 0.0;
     DataType obsEdgeCorrelatorTot = 0.0;
     DataType obsZ2Tot = 0.0;
     DataType obsEdgeCorrelatorZ2PlusTot = 0.0;
     DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
+    DataType obsStructureFactorCDWTot = 0.0;
+    DataType obsStructureFactorCDWM4Tot = 0.0;
 
     pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
         sign = pfqmc.sign;
-        // sign = normalizeToPlusMinus1(sign);
 
         if (i % 20 == 0) {
             signRaw = pfqmc.getSignRaw();
@@ -265,9 +267,13 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelator = config.EdgeCorrelator(pfqmc.g);
         obsZ2 = config.Z2FermionParity(pfqmc.g);
         obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
+        structureFactorCDW = config.StructureFactorCDW(pfqmc.g);
+        structureFactorCDWM4 = config.StructureFactorCDWM4(pfqmc.g);
 
 
-        fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 << "\n";
+        fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 
+        << " CDW = " << structureFactorCDW 
+        << " CDWM4 = " << structureFactorCDWM4 << "\n";
 
         SignTot += sign;
         obsZ2Tot += sign * obsZ2;
@@ -276,6 +282,8 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelatorTot += sign * obsEdgeCorrelator;
         obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
         obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
+        obsStructureFactorCDWTot += sign * structureFactorCDW;
+        obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
 
         if (i == evaluationLength - 1) {
             std::cout << filename << " finished\nAveSign = " << SignTot / double(i + 1) 
@@ -285,6 +293,8 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
             << " AveEdgeCorrelator = " << obsEdgeCorrelatorTot / SignTot 
             << " AveEdgeCorrelatorZ2Plus = " << obsEdgeCorrelatorZ2PlusTot / z2PlusSignTot 
             << " AveEdgeCorrelatorZ2Minus = " << obsEdgeCorrelatorZ2MinusTot / z2MinusSignTot
+            << " AveStructureFactorCDW = " << obsStructureFactorCDWTot / SignTot
+            << " AveStructureFactorCDWM4 = " << obsStructureFactorCDWM4Tot / SignTot
                       << "\n";
         }
     }
@@ -341,13 +351,18 @@ int main(int argc, char* argv[]) {
         int numprocs, myid;
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+        srand(nseed);
+        int nseeds[numprocs];
+        for (int i = 0; i < numprocs; i++) {
+            nseeds[i] = rand();
+        }
         
-        nseed += myid*10;
         // filename = "chain-Lx-Ltau-V-delta-myid-seed.out"
         sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%d-%d.out", 
-            filepath, Lx, LTau, V, delta, myid, nseed);
+            filepath, Lx, LTau, V, delta, myid, nseeds[myid]);
         std::cout << "filename = " << filename << std::endl;
-        ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseed, evaluationLength, filename);
+        ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         return 0;
