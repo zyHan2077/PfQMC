@@ -23,7 +23,7 @@ find_package(GTest CONFIG REQUIRED)
 
 # set_target_properties( libyaml PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/lib/libyaml-cpp.a )
 
-set(CMAKE_CXX_COMPILER "icpx")
+set(CMAKE_CXX_COMPILER "mpiicpx")
 set(CMAKE_C_LINK)
 set(FP_MODEL_FLAGS "-fp-model=precise -fimf-arch-consistency=true -no-fma")
 

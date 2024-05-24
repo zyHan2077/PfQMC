@@ -282,7 +282,7 @@ class Chain_tV : public Spinless_tV {
             }
         }
 
-        std::cout << "nBond = " << nBond[0] << " " << nBond[1] << std::endl;
+        // std::cout << "nBond = " << nBond[0] << " " << nBond[1] << std::endl;
 
         op_array = std::vector<Operator *>(3 * l + 1);
         iVecType *s;

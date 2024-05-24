@@ -1,5 +1,7 @@
+#include "mpi.h"
 #include <omp.h>
 #include <string.h>
+#include <fstream>
 
 #include "inc/honeycomb.h"
 #include "inc/pfqmc.h"
@@ -198,9 +200,11 @@ int main_square() {
     return 0;
 }
 
-int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength=1000) {
+int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength, char* filename) {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(nthreads);
+
+    std::fstream fout(filename, std::fstream::out);
 
     int stabilizationTime = 10;
     int thermalLength = 200;
@@ -213,17 +217,17 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     Chain_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     // std::cout << "here!\n";
-    std::cout << "=== p-wave Chain Model ===\n";
-    std::cout << "Lx = " << Lx << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads
-    << " delta = " << delta << " boundary = " << boundary << std::endl;
+    fout << "=== p-wave Chain Model ===\n";
+    fout << "Lx = " << Lx << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads
+    << " delta = " << delta << " boundary = " << boundary << " evaluationLength = " << evaluationLength << std::endl;
     // std::cout << "here!" << std::endl;
     for (int i = 0; i < thermalLength; i++) {
-        std::cout << i << " ";
+        fout << i << " ";
         // std::cout << "sign = " << pfqmc.sign << "\n";
         pfqmc.rightSweep();
         pfqmc.leftSweep();
     }
-    std::cout << std::endl;
+    fout << std::endl;
 
     // DataType energy = 0.0;
     // DataType structureFactorCDW = 0.0;
@@ -263,7 +267,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
 
 
-        // std::cout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 << "\n";
+        fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 << "\n";
 
         SignTot += sign;
         obsZ2Tot += sign * obsZ2;
@@ -273,8 +277,8 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
         obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
 
-        if ((i % 100) == 0) {
-            std::cout << " \n iter = " << i << " AveSign = " << SignTot / double(i + 1) 
+        if (i == evaluationLength - 1) {
+            std::cout << filename << " finished\nAveSign = " << SignTot / double(i + 1) 
             << " AveZ2 = " << obsZ2Tot / SignTot 
             << " AveZ2PlusSign = " << z2PlusSignTot / double(i + 1) 
             << " AveZ2MinusSign = " << z2MinusSignTot / double(i + 1) 
@@ -287,8 +291,8 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     // std::cout << pfqmc.g << "\n";
 
     double time = omp_get_wtime() - start_time;
-    std::cout << "=== End of p-wave Chain Model ===\n";
-    std::cout << "total time " << time << std::endl;
+    fout << "=== End of p-wave Chain Model ===\n";
+    fout << "total time " << time << std::endl;
     return 0;
 }
 
@@ -297,6 +301,9 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: " << argv[0] << " --square | --honeycomb | --SRhoneycomb\n";
         return 0;
     }
+
+    MPI_Init(&argc,&argv);
+    int ok = 0;
 
     if (std::strcmp(argv[1], "--square") == 0) {
         return main_square();
@@ -317,6 +324,9 @@ int main(int argc, char* argv[]) {
     } else if (std::strcmp(argv[1], "--chain") == 0) {
         int Lx, LTau, nthreads, nseed, evaluationLength;
         double dt, V, delta;
+        char* filepath;
+        char filename[100];
+
         Lx = std::stoi(argv[2]);
         LTau = std::stoi(argv[3]);
         dt = std::stod(argv[4]);
@@ -325,9 +335,24 @@ int main(int argc, char* argv[]) {
         nthreads = std::stoi(argv[7]);
         nseed = std::stoi(argv[8]);
         evaluationLength = std::stoi(argv[9]);
-        return main_chain(Lx, LTau, dt, V, delta, nthreads, nseed, evaluationLength);
+        filepath = argv[10];
+
+
+        int numprocs, myid;
+        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+        MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+        
+        nseed += myid*10;
+        // filename = "chain-Lx-Ltau-V-delta-myid-seed.out"
+        sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%d-%d.out", 
+            filepath, Lx, LTau, V, delta, myid, nseed);
+        std::cout << "filename = " << filename << std::endl;
+        ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseed, evaluationLength, filename);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         return 0;
     }
+
+    MPI_Finalize();
+    return ok;
 }
