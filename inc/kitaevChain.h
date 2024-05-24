@@ -80,14 +80,15 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         }
     }
 
-    inline void EdgeCorrelator(const MatType &g, DataType &g11, DataType &g22) {
+    // this defines the correlation function between 
+    // the two majorana "on the edge"
+    // in principle only be used when Lx = 2n and Delta > 0
+    // <i \gamma^2_1 \gamma^2_L>
+    inline DataType EdgeCorrelator(const MatType &g) {
         int idx1, idx2;
-        idx1 = majoranaCoord2Idx(0, 0);
-        idx2 = majoranaCoord2Idx(Lx-1, 0);
-        g11 = g(idx1, idx2);
         idx1 = majoranaCoord2Idx(0, 1);
         idx2 = majoranaCoord2Idx(Lx-1, 1);
-        g22 = g(idx1, idx2);
+        return (1.0i) * g(idx1, idx2);
     }
 
     inline DataType StructureFactorCDW(const MatType &g) const {
@@ -126,6 +127,11 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
                 additionalSign = (1.0i);
                 break;
         }
+
+        int tmp = Lx * (Lx -1) /2;
+        if (tmp % 2 == 1) {
+            additionalSign *= -1.0;
+        }
         MatType gcopy = g;
         DataType r = additionalSign * pfaf(Lx, gcopy);
         // std::cout << "Z2FermionParity = " << r << std::endl;
@@ -150,8 +156,8 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         }
 
         int idx1, idx2;
-        idx1 = majoranaCoord2Idx(0, 0);
-        idx2 = majoranaCoord2Idx(Lx-1, 0);
+        idx1 = majoranaCoord2Idx(0, 1);
+        idx2 = majoranaCoord2Idx(Lx-1, 1);
         iVecType curInd(2*Lx - 2);
         int count = 0;
         for (int i = 0; i < 2*Lx; i++) {
@@ -161,9 +167,19 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
             }
         }
 
+        // sign = (-i)^(Lx) * (-1)^(Lx(Lx-1)/2) * (-1)^(Lx-1) * i
+        int tmp = Lx * (Lx -1) /2;
+        if (tmp % 2 == 1) {
+            additionalSign *= -1.0;
+        }
+
+        if(Lx % 2 == 0) {
+            additionalSign *= -1.0;
+        }
+
         MatType gcopy = g(curInd, curInd);
 
-        return additionalSign * pfaf(Lx-1, gcopy);
+        return (1.0i) * additionalSign * pfaf(Lx-1, gcopy);
     }
 
     inline DataType energyFromGreensFunc(const MatType & g) {

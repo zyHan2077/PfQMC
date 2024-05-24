@@ -7,6 +7,31 @@
 #include "inc/singleMajoranaHoneycomb.h"
 #include "inc/kitaevChain.h"
 
+void fixSign(DataType& sign, DataType signRaw, double threshold) {
+    // unreliable signRaw
+    if (std::abs(signRaw.real() - 1.0) > threshold)
+    {
+        // reliable sign
+        if (std::abs(sign.real() - 1.0) < threshold) {
+            if (sign.real() > 0.0) {
+                sign = 1.0;
+            } else {
+                sign = -1.0;
+            }
+        } else {
+            std::cout << "=== error in sign === " << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
+        }
+    } else {
+        // reliable signRaw
+        if (signRaw.real() > 0.0) {
+            sign = 1.0;
+        } else {
+            sign = -1.0;
+        }
+    }
+}
+
+
 int main_honeycomb() {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(8);
@@ -203,14 +228,17 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     // DataType energy = 0.0;
     // DataType structureFactorCDW = 0.0;
     DataType sign, signRaw;
+    DataType obsZ2, obsEnergy, obsEdgeCorrelator, obsEdgeCorrelatorZ2;
 
     DataType SignTot = 0.0;
-    DataType obsTot = 0.0; // for quick check
-    DataType obsZ2Tot = 0.0;
-    DataType g11, g22;
-    DataType SignZ2Tot = 0.0;
+    DataType z2PlusSignTot = 0.0;
+    DataType z2MinusSignTot = 0.0;
 
-    DataType z2, z2Correlator;
+    DataType obsEnergyTot = 0.0;
+    DataType obsEdgeCorrelatorTot = 0.0;
+    DataType obsZ2Tot = 0.0;
+    DataType obsEdgeCorrelatorZ2PlusTot = 0.0;
+    DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
 
     pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
@@ -221,33 +249,40 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
 
         if (i % 20 == 0) {
             signRaw = pfqmc.getSignRaw();
-            if (std::abs(sign - signRaw) > 1e-2) {
-                std::cout << "=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
+            double threshold = 1e-2;
+            if (std::abs(sign - signRaw) > threshold) {
+                fixSign(sign, signRaw, threshold);
+                pfqmc.sign = sign;
             }
 	        // pfqmc.sign = signRaw;
         }
         
-        // srSignTot += sign;
-        // energy = config.energyFromGreensFunc(pfqmc.g);
-        config.EdgeCorrelator(pfqmc.g, g11, g22);
-        // g11 = config.StructureFactorCDW(pfqmc.g);
-        z2 = config.Z2FermionParity(pfqmc.g);
-        z2Correlator = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
-        std::cout << "iter = " << i << " sign = " << sign << " z2 = " << z2 << " z2Correlator = " << z2Correlator << " g11 = " << g11 << "\n";
+        // obsEnergy = config.energyFromGreensFunc(pfqmc.g);
+        obsEdgeCorrelator = config.EdgeCorrelator(pfqmc.g);
+        obsZ2 = config.Z2FermionParity(pfqmc.g);
+        obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
+
+
+        // std::cout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 << "\n";
 
         SignTot += sign;
-        SignZ2Tot += sign * (1.0 + z2) / 2.0;
-        obsZ2Tot += sign * (g11 + z2Correlator) / 2.0; // for quick 
-        obsTot += sign * g11;
-        // structureFactorCDW = config.structureFactorCDW(pfqmc.g);
-        // std::cout << "iter = " << i << " energy = " << energy 
-        // // << " structureFactorCDW = " << structureFactorCDW 
-        // << " MRsign = " << pfqmc.sign << "\n";
+        obsZ2Tot += sign * obsZ2;
+        z2PlusSignTot += sign * (1.0 + obsZ2) / 2.0;
+        z2MinusSignTot += sign * (1.0 - obsZ2) / 2.0;
+        obsEdgeCorrelatorTot += sign * obsEdgeCorrelator;
+        obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
+        obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
 
-        if ((i % 20) == 0)
-            std::cout << " \n iter = " << i << " AveObservable=" << obsTot / SignTot << " AveSign = " << SignTot / double(i + 1) << " AveZ2Sign = " << SignZ2Tot / double(i + 1) << " AveZ2Obs = " << obsZ2Tot / SignZ2Tot
-            //<< " structureFactorCDW = " << structureFactorCDW / double(i + 1)
+        if ((i % 100) == 0) {
+            std::cout << " \n iter = " << i << " AveSign = " << SignTot / double(i + 1) 
+            << " AveZ2 = " << obsZ2Tot / SignTot 
+            << " AveZ2PlusSign = " << z2PlusSignTot / double(i + 1) 
+            << " AveZ2MinusSign = " << z2MinusSignTot / double(i + 1) 
+            << " AveEdgeCorrelator = " << obsEdgeCorrelatorTot / SignTot 
+            << " AveEdgeCorrelatorZ2Plus = " << obsEdgeCorrelatorZ2PlusTot / z2PlusSignTot 
+            << " AveEdgeCorrelatorZ2Minus = " << obsEdgeCorrelatorZ2MinusTot / z2MinusSignTot
                       << "\n";
+        }
     }
     // std::cout << pfqmc.g << "\n";
 
