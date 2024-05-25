@@ -11,10 +11,10 @@
 
 void fixSign(DataType& sign, DataType signRaw, double threshold) {
     // unreliable signRaw
-    if (std::abs(signRaw.real() - 1.0) > threshold)
+    if (std::abs( 1.0 - std::abs(signRaw.real()) ) > threshold)
     {
         // reliable sign
-        if (std::abs(sign.real() - 1.0) < threshold) {
+        if (std::abs( 1.0 - std::abs( sign.real() ) ) < threshold) {
             if (sign.real() > 0.0) {
                 sign = 1.0;
             } else {
@@ -247,7 +247,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     DataType obsStructureFactorCDWTot = 0.0;
     DataType obsStructureFactorCDWM4Tot = 0.0;
 
-    pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
+    // pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
