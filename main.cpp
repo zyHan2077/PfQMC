@@ -81,36 +81,37 @@ int main_honeycomb() {
     return 0;
 }
 
-int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, int nthreads, int nseed) {
+int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, int nthreads, int nseed, int evaluationLength, char* filename) {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(nthreads);
 
-    // int Lx = 10;
-    // int Ly = 10;
-    // int LTau = 33;
-    // double dt = 0.1;
-    // double V = 1.65;
+    std::fstream fout(filename, std::fstream::out);
+
     int stabilizationTime = 10;
     int thermalLength = 200;
-    int evaluationLength = 1000;
-    std::cout << "=== Honeycomb Single Majorana Model ===\n";
-    std::cout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads << std::endl;
+    // int evaluationLength = 1000;
+    fout << "=== Honeycomb Single Majorana Model ===\n";
+    fout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads << std::endl;
     SpinlessTvHoneycombSingleMajoranaUtils config(Lx, Ly, dt, V, LTau);
     rdGenerator rd(nseed);
     HoneycombSingleMajorana_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     for (int i = 0; i < thermalLength; i++) {
-	    std::cout << i << " ";
+	    fout << i << " " << std::flush;
         pfqmc.rightSweep();
         pfqmc.leftSweep();
-        // std::cout << i << std::endl;
     }
-    std::cout << std::endl;
+    fout << std::endl;
 
-    DataType energy = 0.0;
+    // DataType energy = 0.0;
     DataType structureFactorCDW = 0.0;
+    DataType structureFactorCDWq = 0.0;
     DataType sign, signRaw;
+
     DataType srSignTot = 0.0;
+    DataType CDWTot = 0.0;
+    DataType CDWqTot = 0.0;
+
     for (int i = 0; i < evaluationLength; i++) {
         pfqmc.rightSweep();
         pfqmc.leftSweep();
@@ -118,26 +119,36 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
 
         if (i % 20 == 0) {
             signRaw = pfqmc.getSignRaw();
-            if (std::abs(sign - signRaw) > 1e-1) {
-                std::cout << "=== error in sign at round = " << i << " sign = " << sign << " ≠ " << signRaw << "==== \n"; 
+            double threshold = 1e-2;
+            if (std::abs(sign - signRaw) > threshold) {
+                fixSign(sign, signRaw, threshold);
+                pfqmc.sign = sign;
             }
 	        // pfqmc.sign = signRaw;
         }
 
         // srSignTot += sign;
-        energy = config.energyFromGreensFunc(pfqmc.g);
+        // energy = config.energyFromGreensFunc(pfqmc.g);
         structureFactorCDW = config.structureFactorCDW(pfqmc.g);
-        std::cout << "iter = " << i << " energy = " << energy << " structureFactorCDW = " << structureFactorCDW << " MRsign = " << pfqmc.sign << "\n";
+        structureFactorCDWq = config.structureFactorCDWoffset(pfqmc.g);
 
-        // if ((i % 10) == 0)
-        //     std::cout << "iter = " << i << " energy=" << energy / double(i + 1) << " srSign = " << srSignTot / double(i + 1) << " structureFactorCDW = " << structureFactorCDW / double(i + 1)
-        //               << "\n";
+        fout << "i = " << i << " CDW = " << structureFactorCDW << " MRsign = " << sign << " CDWq = " << structureFactorCDWq << std::endl;
+
+        srSignTot += sign;
+        CDWTot += structureFactorCDW;
+        CDWqTot += structureFactorCDWq;
+
+        if (i == evaluationLength - 1) {
+            std::cout << "Average MRsign = " << srSignTot / double(evaluationLength) << " AveCDW = " << CDWTot / double(evaluationLength) << " AveCDWq = " << CDWqTot / double(evaluationLength) << std::endl;
+        }
+
+        
     }
     // std::cout << pfqmc.g << "\n";
 
     double time = omp_get_wtime() - start_time;
-    std::cout << "=== End of Honeycomb Single Majorana Model ===\n";
-    std::cout << "total time " << time << std::endl;
+    fout << "=== End of Honeycomb Single Majorana Model ===\n";
+    fout << "total time " << time << std::endl;
     return 0;
 }
 
@@ -324,8 +335,11 @@ int main(int argc, char* argv[]) {
     } else if (std::strcmp(argv[1], "--honeycomb") == 0) {
         return main_honeycomb();
     } else if (std::strcmp(argv[1], "--SRhoneycomb") == 0) {
-        int Lx, Ly, LTau, nthreads, nseed;
+        int Lx, Ly, LTau, nthreads, nseed, evaluationLength;
+        char* filepath;
         double dt, V;
+        char filename[100];
+
         Lx = std::stoi(argv[2]);
         Ly = std::stoi(argv[3]);
         LTau = std::stoi(argv[4]);
@@ -333,8 +347,27 @@ int main(int argc, char* argv[]) {
         V = std::stod(argv[6]);
         nthreads = std::stoi(argv[7]);
         nseed = std::stoi(argv[8]);
+        evaluationLength = std::stoi(argv[9]);
+        filepath = argv[10];
+
+        int numprocs, myid;
+        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+        MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+        srand(nseed);
+        int nseeds[numprocs];
+        for (int i = 0; i < numprocs; i++) {
+            nseeds[i] = rand();
+        }
+        
+        // filename = "honeycomb-Lx-Ly-LTau-dt-V-myid-seed.out"
+        sprintf(filename, "%shoneycomb-%d-%d-%d-%.2lf-%.2lf-%d-%d.out", 
+            filepath, Lx, Ly, LTau, dt, V, myid, nseeds[myid]);
+        std::cout << "filename = " << filename << std::endl;
+        ok = main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads, nseeds[myid], evaluationLength, filename);
+
         // fstream fin()
-        return main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads, nseed);
+        return ok;
     } else if (std::strcmp(argv[1], "--chain") == 0) {
         int Lx, LTau, nthreads, nseed, evaluationLength;
         double dt, V, delta;
@@ -369,7 +402,7 @@ int main(int argc, char* argv[]) {
         ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
-        return 0;
+        ok = 0;
     }
 
     MPI_Finalize();

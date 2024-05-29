@@ -27,6 +27,16 @@ class SpinlessTvHoneycombSingleMajoranaUtils : public SpinlessTvUtils {
         return majoranaCoord(idx / Ly, idx % Ly, 0);
     }
 
+    inline majoranaCoord idx2MajoranaCoord(int idx) const {
+        majoranaCoord s;
+        int tmp;
+        s.iSubcell = idx % 2;
+        tmp = idx / 2;
+        s.iy = tmp % Ly;
+        s.ix = tmp / Ly;
+        return s;
+    }
+
     inline int majoranaCoord2Idx(majoranaCoord s) const {
         return unitCellCoord2Idx(s.ix, s.iy)*2 + s.iSubcell;
     }
@@ -116,6 +126,24 @@ class SpinlessTvHoneycombSingleMajoranaUtils : public SpinlessTvUtils {
                     r += g(i, j) * g(i, j);
                 } else {
                     r -= g(i, j) * g(i, j);
+                }
+            }
+        }
+        return r / (4.0 * nsites * nsites);
+    }
+
+    inline DataType structureFactorCDWoffset(const MatType &g) {
+        DataType r = 0.0;
+        majoranaCoord s1, s2;
+        DataType dq = 2 * M_PI / Lx;
+        for (int i=0; i<nsites; i++) {
+            for (int j=0; j<nsites; j++) {
+                s1 = idx2MajoranaCoord(i);
+                s2 = idx2MajoranaCoord(j);
+                if ( (s1.iSubcell+s2.iSubcell) % 2 == 0 ) {
+                    r += (g(i, j) * g(i, j)) * exp(1.0i * dq * double(s1.ix - s2.ix));
+                } else {
+                    r -= (g(i, j) * g(i, j)) * exp(1.0i * dq * double(s1.ix - s2.ix));
                 }
             }
         }
