@@ -230,7 +230,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     fout << std::endl;
 
     // DataType energy = 0.0;
-    DataType structureFactorCDW, structureFactorCDWM4;
+    DataType structureFactorCDW, structureFactorCDWM4, structureFactorCDWq;
     DataType sign, signRaw;
     DataType obsZ2, obsEnergy, obsEdgeCorrelator, obsEdgeCorrelatorZ2;
 
@@ -246,6 +246,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
     DataType obsStructureFactorCDWTot = 0.0;
     DataType obsStructureFactorCDWM4Tot = 0.0;
+    DataType obsStructureFactorCDWqTot = 0.0;
 
     // pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
@@ -269,11 +270,12 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
         structureFactorCDW = config.StructureFactorCDW(pfqmc.g);
         structureFactorCDWM4 = config.StructureFactorCDWM4(pfqmc.g);
+        structureFactorCDWq = config.StructureFactorCDWOffset(pfqmc.g);
 
 
         fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 
         << " CDW = " << structureFactorCDW 
-        << " CDWM4 = " << structureFactorCDWM4 << "\n";
+        << " CDWM4 = " << structureFactorCDWM4 << " CDWq = " << structureFactorCDWq << "\n";
 
         SignTot += sign;
         obsZ2Tot += sign * obsZ2;
@@ -284,6 +286,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
         obsStructureFactorCDWTot += sign * structureFactorCDW;
         obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
+        obsStructureFactorCDWqTot += sign * structureFactorCDWq;
 
         if (i == evaluationLength - 1) {
             std::cout << filename << " finished\nAveSign = " << SignTot / double(i + 1) 
@@ -295,6 +298,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
             << " AveEdgeCorrelatorZ2Minus = " << obsEdgeCorrelatorZ2MinusTot / z2MinusSignTot
             << " AveStructureFactorCDW = " << obsStructureFactorCDWTot / SignTot
             << " AveStructureFactorCDWM4 = " << obsStructureFactorCDWM4Tot / SignTot
+            << " AveStructureFactorCDWq = " << obsStructureFactorCDWqTot / SignTot
                       << "\n";
         }
     }

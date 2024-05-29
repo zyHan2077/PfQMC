@@ -111,6 +111,27 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         return r / (4.0 * Lx * Lx);
     }
 
+    inline DataType StructureFactorCDWOffset(const MatType &g) const {
+        DataType r = 0.0;
+        int idxi1, idxi2, idxj1, idxj2;
+        DataType deltaq = 2.0 * M_PI / double(Lx);
+        for (int i = 0; i < Lx; i++) {
+            for (int j = 0; j < Lx; j++) {
+                idxi1 = majoranaCoord2Idx(i, 0);
+                idxi2 = majoranaCoord2Idx(i, 1);
+                idxj1 = majoranaCoord2Idx(j, 0);
+                idxj2 = majoranaCoord2Idx(j, 1);
+                if ( (i+j) % 2 == 0) {
+                    r -= (g(idxi1, idxj1) * g(idxi2, idxj2)) * exp(1.0i * deltaq * double(i - j) );
+                } else {
+                    r += (g(idxi1, idxj1) * g(idxi2, idxj2)) * exp(1.0i * deltaq * double(i - j) );
+                }
+            }
+        }
+
+        return r / (4.0 * Lx * Lx);
+    }
+
     inline DataType StructureFactorCDWM4(const MatType &g) const {
         DataType r = 0.0;
         int idxi1, idxi2, idxj1, idxj2, idxk1, idxk2, idxl1, idxl2;
