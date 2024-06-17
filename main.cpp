@@ -91,7 +91,7 @@ int main_honeycombSingleMajorana(int Lx, int Ly, int LTau, double dt, double V, 
     int thermalLength = 200;
     // int evaluationLength = 1000;
     fout << "=== Honeycomb Single Majorana Model ===\n";
-    fout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads << std::endl;
+    fout << "Lx = " << Lx << " Ly = " << Ly << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads << " evaluationLength = " << evaluationLength << std::endl;
     SpinlessTvHoneycombSingleMajoranaUtils config(Lx, Ly, dt, V, LTau);
     rdGenerator rd(nseed);
     HoneycombSingleMajorana_tV walker(&config, &rd);
@@ -211,7 +211,7 @@ int main_square() {
     return 0;
 }
 
-int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength, char* filename) {
+int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength, char* filename, double mu=0.0) {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(nthreads);
 
@@ -220,20 +220,21 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     int stabilizationTime = 10;
     int thermalLength = 200;
     int boundary = 1;
+    int aveLength = 100;
     // int evaluationLength = 1000;
 
     // int nDim = Lx * Ly * 4;
-    SpinlessTvChainUtils config(Lx, dt, V, LTau, boundary, delta, 0.0);
+    SpinlessTvChainUtils config(Lx, dt, V, LTau, boundary, delta, mu);
     rdGenerator rd(nseed);
     Chain_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
     // std::cout << "here!\n";
-    fout << "=== p-wave Chain Model ===\n";
+    fout << "=== p-wave Chain Model with chemical potential mu = " << mu << " ===\n";
     fout << "Lx = " << Lx << " LTau = " << LTau << " dt = " << dt << " V = " << V << " seed = " << nseed << " nthreads = " << nthreads
     << " delta = " << delta << " boundary = " << boundary << " evaluationLength = " << evaluationLength << std::endl;
     // std::cout << "here!" << std::endl;
     for (int i = 0; i < thermalLength; i++) {
-        fout << i << " ";
+        fout << i << " " << std::flush;
         // std::cout << "sign = " << pfqmc.sign << "\n";
         pfqmc.rightSweep();
         pfqmc.leftSweep();
@@ -241,7 +242,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     fout << std::endl;
 
     // DataType energy = 0.0;
-    DataType structureFactorCDW, structureFactorCDWM4, structureFactorCDWq;
+    DataType structureFactorCDW, structureFactorCDWq;
     DataType sign, signRaw;
     DataType obsZ2, obsEnergy, obsEdgeCorrelator, obsEdgeCorrelatorZ2;
 
@@ -252,12 +253,19 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
 
     DataType obsEnergyTot = 0.0;
     DataType obsEdgeCorrelatorTot = 0.0;
+    DataType obsEdgeCorrelatorZ2Tot = 0.0;
     DataType obsZ2Tot = 0.0;
-    DataType obsEdgeCorrelatorZ2PlusTot = 0.0;
-    DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
+    // DataType obsEdgeCorrelatorZ2PlusTot = 0.0;
+    // DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
     DataType obsStructureFactorCDWTot = 0.0;
-    DataType obsStructureFactorCDWM4Tot = 0.0;
+    // DataType obsStructureFactorCDWM4Tot = 0.0;
     DataType obsStructureFactorCDWqTot = 0.0;
+
+    // fourier transform of the CDW structure factor
+    // CDW should corresponds to obsCDWFT[\pi]
+    // CDWq should corresponds to obsCDWFT[\pi + 2\pi / Lx]
+    cVecType obsCDWFTTot = cVecType::Zero(Lx);
+    cVecType obsCDWFT;
 
     // pfqmc.sign = pfqmc.getSignRaw(); // initialize sign
     for (int i = 0; i < evaluationLength; i++) {
@@ -280,37 +288,65 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         obsZ2 = config.Z2FermionParity(pfqmc.g);
         obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
         structureFactorCDW = config.StructureFactorCDW(pfqmc.g);
-        structureFactorCDWM4 = config.StructureFactorCDWM4(pfqmc.g);
+        // structureFactorCDWM4 = config.StructureFactorCDWM4(pfqmc.g);
         structureFactorCDWq = config.StructureFactorCDWOffset(pfqmc.g);
+        config.StructureFactorCDWFFT(pfqmc.g, obsCDWFT);
 
 
-        fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 
-        << " CDW = " << structureFactorCDW 
-        << " CDWM4 = " << structureFactorCDWM4 << " CDWq = " << structureFactorCDWq << "\n";
+        // fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 
+        // << " CDW = " << structureFactorCDW 
+        // << " CDWM4 = " << structureFactorCDWM4 << " CDWq = " << structureFactorCDWq << std::endl;
 
         SignTot += sign;
         obsZ2Tot += sign * obsZ2;
-        z2PlusSignTot += sign * (1.0 + obsZ2) / 2.0;
-        z2MinusSignTot += sign * (1.0 - obsZ2) / 2.0;
+        // z2PlusSignTot += sign * (1.0 + obsZ2) / 2.0;
+        // z2MinusSignTot += sign * (1.0 - obsZ2) / 2.0;
         obsEdgeCorrelatorTot += sign * obsEdgeCorrelator;
-        obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
-        obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
+        obsEdgeCorrelatorZ2Tot += sign * obsEdgeCorrelatorZ2;
+        // obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
+        // obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
         obsStructureFactorCDWTot += sign * structureFactorCDW;
-        obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
+        // obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
         obsStructureFactorCDWqTot += sign * structureFactorCDWq;
+        obsCDWFTTot += sign * obsCDWFT;
+
+        // std::cout << "iter = " << i << " cdw = " << structureFactorCDW << " cdw also = " << obsCDWFT[4] << std::endl;
+
+        if ((i+1) % aveLength == 0) {
+            double aveLengthD = double(aveLength);
+            fout << "iter = " << i << " sign = " << SignTot / aveLengthD << " z2 = " << obsZ2Tot / aveLengthD << " edgeCorrelator = " << obsEdgeCorrelatorTot / aveLengthD << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2Tot / aveLengthD << " CDW = " << obsStructureFactorCDWTot / aveLengthD << " CDWq = " << obsStructureFactorCDWqTot / aveLengthD << std::endl;
+
+            // fout << "obsCDWFT = ";
+            for (int j = 0; j < Lx; j++) {
+                fout << obsCDWFTTot[j].real() / aveLengthD << " ";
+            }
+            fout << std::endl;
+            SignTot = 0.0;
+            obsZ2Tot = 0.0;
+            z2PlusSignTot = 0.0;
+            z2MinusSignTot = 0.0;
+            obsEdgeCorrelatorTot = 0.0;
+            obsEdgeCorrelatorZ2Tot = 0.0;
+            obsStructureFactorCDWTot = 0.0;
+            // obsStructureFactorCDWM4Tot = 0.0;
+            obsStructureFactorCDWqTot = 0.0;
+            obsCDWFTTot = cVecType::Zero(Lx);
+        }
 
         if (i == evaluationLength - 1) {
-            std::cout << filename << " finished\nAveSign = " << SignTot / double(i + 1) 
-            << " AveZ2 = " << obsZ2Tot / SignTot 
-            << " AveZ2PlusSign = " << z2PlusSignTot / double(i + 1) 
-            << " AveZ2MinusSign = " << z2MinusSignTot / double(i + 1) 
-            << " AveEdgeCorrelator = " << obsEdgeCorrelatorTot / SignTot 
-            << " AveEdgeCorrelatorZ2Plus = " << obsEdgeCorrelatorZ2PlusTot / z2PlusSignTot 
-            << " AveEdgeCorrelatorZ2Minus = " << obsEdgeCorrelatorZ2MinusTot / z2MinusSignTot
-            << " AveStructureFactorCDW = " << obsStructureFactorCDWTot / SignTot
-            << " AveStructureFactorCDWM4 = " << obsStructureFactorCDWM4Tot / SignTot
-            << " AveStructureFactorCDWq = " << obsStructureFactorCDWqTot / SignTot
-                      << "\n";
+        // if ( i % 20 == 0) {
+            std::cout << filename << " finished" << std::endl;
+            // << "AveSign = " << SignTot / double(i + 1) 
+            // << " AveZ2 = " << obsZ2Tot / SignTot 
+            // << " AveZ2PlusSign = " << z2PlusSignTot / double(i + 1) 
+            // << " AveZ2MinusSign = " << z2MinusSignTot / double(i + 1) 
+            // << " AveEdgeCorrelator = " << obsEdgeCorrelatorTot / SignTot 
+            // << " AveEdgeCorrelatorZ2Plus = " << obsEdgeCorrelatorZ2PlusTot / z2PlusSignTot 
+            // << " AveEdgeCorrelatorZ2Minus = " << obsEdgeCorrelatorZ2MinusTot / z2MinusSignTot
+            // << " AveStructureFactorCDW = " << obsStructureFactorCDWTot / SignTot
+            // << " AveStructureFactorCDWM4 = " << obsStructureFactorCDWM4Tot / SignTot
+            // << " AveStructureFactorCDWq = " << obsStructureFactorCDWqTot / SignTot
+            //           << "\n";
         }
     }
     // std::cout << pfqmc.g << "\n";
@@ -320,6 +356,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     fout << "total time " << time << std::endl;
     return 0;
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -367,10 +404,9 @@ int main(int argc, char* argv[]) {
         ok = main_honeycombSingleMajorana(Lx, Ly, LTau, dt, V, nthreads, nseeds[myid], evaluationLength, filename);
 
         // fstream fin()
-        return ok;
     } else if (std::strcmp(argv[1], "--chain") == 0) {
         int Lx, LTau, nthreads, nseed, evaluationLength;
-        double dt, V, delta;
+        double dt, V, delta, mu;
         char* filepath;
         char filename[100];
 
@@ -399,7 +435,12 @@ int main(int argc, char* argv[]) {
         sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%d-%d.out", 
             filepath, Lx, LTau, V, delta, myid, nseeds[myid]);
         std::cout << "filename = " << filename << std::endl;
-        ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
+        if (argc == 11) { 
+            ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
+        } else {
+            mu = std::stod(argv[11]);
+            ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename, mu);
+        }
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         ok = 0;

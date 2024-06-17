@@ -46,6 +46,7 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         int idx1, idx2;
         DataType tmp = (1.0i);
         DataType tmpDelta = (1.0i)*delta;
+        DataType tmpMu = (1.0i)*mu;
         int Li = Lx;
         if (boundaryType == 1) {
             Li = Lx - 1;
@@ -75,8 +76,14 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
             idx2 = majoranaCoord2Idx((i+1)%Lx, 1);
             H(idx1, idx2) += -tmpDelta;
             H(idx2, idx1) += tmpDelta;
+        }
 
-            // TODO: mu not implemented yet
+        // chemical potential
+        for (int i=0; i<Lx; i++) {
+            idx1 = majoranaCoord2Idx(i, 0);
+            idx2 = majoranaCoord2Idx(i, 1);
+            H(idx1, idx2) += -tmpMu;
+            H(idx2, idx1) += +tmpMu;
         }
     }
 
@@ -94,16 +101,18 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
     inline DataType StructureFactorCDW(const MatType &g) const {
         DataType r = 0.0;
         int idxi1, idxi2, idxj1, idxj2;
+        DataType tmp;
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Lx; j++) {
                 idxi1 = majoranaCoord2Idx(i, 0);
                 idxi2 = majoranaCoord2Idx(i, 1);
                 idxj1 = majoranaCoord2Idx(j, 0);
                 idxj2 = majoranaCoord2Idx(j, 1);
+                tmp = (-g(idxi1, idxj1) * g(idxi2, idxj2) + g(idxi1, idxi2) * g(idxj1, idxj2) + g(idxi1, idxj2) * g(idxi2, idxj1));
                 if ( (i+j) % 2 == 0) {
-                    r -= g(idxi1, idxj1) * g(idxi2, idxj2);
+                    r += tmp;
                 } else {
-                    r += g(idxi1, idxj1) * g(idxi2, idxj2);
+                    r -= tmp;
                 }
             }
         }
@@ -114,6 +123,7 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
     inline DataType StructureFactorCDWOffset(const MatType &g) const {
         DataType r = 0.0;
         int idxi1, idxi2, idxj1, idxj2;
+        DataType tmp;
         DataType deltaq = 2.0 * M_PI / double(Lx);
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Lx; j++) {
@@ -121,10 +131,11 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
                 idxi2 = majoranaCoord2Idx(i, 1);
                 idxj1 = majoranaCoord2Idx(j, 0);
                 idxj2 = majoranaCoord2Idx(j, 1);
+                tmp = (-g(idxi1, idxj1) * g(idxi2, idxj2) + g(idxi1, idxi2) * g(idxj1, idxj2) + g(idxi1, idxj2) * g(idxi2, idxj1));
                 if ( (i+j) % 2 == 0) {
-                    r -= (g(idxi1, idxj1) * g(idxi2, idxj2)) * exp(1.0i * deltaq * double(i - j) );
+                    r += tmp * exp(1.0i * deltaq * double(i - j) );
                 } else {
-                    r += (g(idxi1, idxj1) * g(idxi2, idxj2)) * exp(1.0i * deltaq * double(i - j) );
+                    r -= tmp * exp(1.0i * deltaq * double(i - j) );
                 }
             }
         }
@@ -132,39 +143,62 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         return r / (4.0 * Lx * Lx);
     }
 
-    inline DataType StructureFactorCDWM4(const MatType &g) const {
-        DataType r = 0.0;
-        int idxi1, idxi2, idxj1, idxj2, idxk1, idxk2, idxl1, idxl2;
+    inline void StructureFactorCDWFFT(const MatType &g, cVecType &out) const {
+        int idxi1, idxi2, idxj1, idxj2;
+        // double r;
+        DataType deltaq = 2.0 * M_PI / double(Lx);
+        DataType curQ;
+        cVecType r = cVecType::Zero(Lx);
         DataType tmp;
         for (int i = 0; i < Lx; i++) {
             for (int j = 0; j < Lx; j++) {
-                for (int k = 0; k < Lx; k++) {
-                    for (int l = 0; l < Lx; l++) {
-                        idxi1 = majoranaCoord2Idx(i, 0);
-                        idxi2 = majoranaCoord2Idx(i, 1);
-                        idxj1 = majoranaCoord2Idx(j, 0);
-                        idxj2 = majoranaCoord2Idx(j, 1);
-                        idxk1 = majoranaCoord2Idx(k, 0);
-                        idxk2 = majoranaCoord2Idx(k, 1);
-                        idxl1 = majoranaCoord2Idx(l, 0);
-                        idxl2 = majoranaCoord2Idx(l, 1);
-                        
-                        tmp = (g(idxi1, idxj1) * g(idxk1, idxl1) +  g(idxi1, idxl1) * g(idxj1, idxk1) - g(idxi1, idxk1) * g(idxj1, idxl1));
-                        
-                        tmp *= (g(idxi2, idxj2) * g(idxk2, idxl2) +  g(idxi2, idxl2) * g(idxj2, idxk2) - g(idxi2, idxk2) * g(idxj2, idxl2));
-
-                        if ( (i+j+k+l) % 2 == 0) {
-                            r += tmp;
-                        } else {
-                            r -= tmp;
-                        }
-                    }
+                idxi1 = majoranaCoord2Idx(i, 0);
+                idxi2 = majoranaCoord2Idx(i, 1);
+                idxj1 = majoranaCoord2Idx(j, 0);
+                idxj2 = majoranaCoord2Idx(j, 1);
+                tmp = (-g(idxi1, idxj1) * g(idxi2, idxj2) + g(idxi1, idxi2) * g(idxj1, idxj2) + g(idxi1, idxj2) * g(idxi2, idxj1));
+                for (int k=0; k<Lx; k++) {
+                    curQ = deltaq * double(k);
+                    r(k) += tmp * exp(1.0i * curQ * double(i - j) );
                 }
             }
         }
-
-        return r / (16.0 * Lx * Lx * Lx * Lx);
+        out = r / (4.0 * Lx * Lx);
     }
+
+    // inline DataType StructureFactorCDWM4(const MatType &g) const {
+    //     DataType r = 0.0;
+    //     int idxi1, idxi2, idxj1, idxj2, idxk1, idxk2, idxl1, idxl2;
+    //     DataType tmp;
+    //     for (int i = 0; i < Lx; i++) {
+    //         for (int j = 0; j < Lx; j++) {
+    //             for (int k = 0; k < Lx; k++) {
+    //                 for (int l = 0; l < Lx; l++) {
+    //                     idxi1 = majoranaCoord2Idx(i, 0);
+    //                     idxi2 = majoranaCoord2Idx(i, 1);
+    //                     idxj1 = majoranaCoord2Idx(j, 0);
+    //                     idxj2 = majoranaCoord2Idx(j, 1);
+    //                     idxk1 = majoranaCoord2Idx(k, 0);
+    //                     idxk2 = majoranaCoord2Idx(k, 1);
+    //                     idxl1 = majoranaCoord2Idx(l, 0);
+    //                     idxl2 = majoranaCoord2Idx(l, 1);
+                        
+    //                     tmp = (g(idxi1, idxj1) * g(idxk1, idxl1) +  g(idxi1, idxl1) * g(idxj1, idxk1) - g(idxi1, idxk1) * g(idxj1, idxl1));
+                        
+    //                     tmp *= (g(idxi2, idxj2) * g(idxk2, idxl2) +  g(idxi2, idxl2) * g(idxj2, idxk2) - g(idxi2, idxk2) * g(idxj2, idxl2));
+
+    //                     if ( (i+j+k+l) % 2 == 0) {
+    //                         r += tmp;
+    //                     } else {
+    //                         r -= tmp;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     return r / (16.0 * Lx * Lx * Lx * Lx);
+    // }
 
     inline DataType Z2FermionParity(const MatType &g) const {
         DataType additionalSign;
