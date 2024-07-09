@@ -366,7 +366,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " --square | --honeycomb | --SRhoneycomb\n";
+        std::cout << "Usage: " << argv[0] << " --square | --honeycomb | --MRhoneycomb [PARAMS]\n";
         return 0;
     }
 
@@ -377,7 +377,7 @@ int main(int argc, char* argv[]) {
         return main_square();
     } else if (std::strcmp(argv[1], "--honeycomb") == 0) {
         return main_honeycomb();
-    } else if (std::strcmp(argv[1], "--SRhoneycomb") == 0) {
+    } else if (std::strcmp(argv[1], "--MRhoneycomb") == 0) {
         int Lx, Ly, LTau, nthreads, nseed, evaluationLength;
         char* filepath;
         double dt, V;

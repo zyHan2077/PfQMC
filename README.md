@@ -1,20 +1,25 @@
 # Pfaffian Quantum Monte Carlo (PfQMC)
 
-usage:
+A prototype implementation of the Pfaffian Quantum Monte Carlo (PfQMC) algorithm for simulating fermionic quantum many-body systems. This repository implements the spinless t-V model with possible p+ip pairing term, and the interacting Kitaev chain.
 
+## Usage
+
+![build and test](https://github.com/zyHan2077/PfQMC/actions/workflows/main.yml/badge.svg)
+
+The repo relies on the [PFAPACK](https://arxiv.org/abs/1102.3440) for Pfaffian-related calculations, included in `inc/pfapack`. [Eigen](https://eigen.tuxfamily.org/) library, along with the Intel® oneAPI Math Kernel Library ([oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)) is used for matrix operations.
+
+To build with CMAKE,
 ```bash
-# setvars for mkl first, 
+# build PFAPACK first with your favorite fortran compiler (ifx here)
+cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make
+
+# run setvars.sh in the Intel oneAPI directory,
 # mkl dependencies should be automatically located
 mkdir build && cd build
 cmake .. -DEIGEN3_INCLUDE_DIR=/path/to/eigen3 & make
 ```
 
-or:
-
-```bash
-mkdir obj && mkdir bin
-make EIGEN3_INCLUDE_DIR=/path/to/eigen3
-```
+See `.github/workflows/main.yml` for a complete build and test workflow.
 
 ## Program Design
 
