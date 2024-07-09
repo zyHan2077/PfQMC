@@ -1,4 +1,4 @@
-# MajoranaQMC
+# Pfaffian Quantum Monte Carlo (PfQMC)
 
 usage:
 

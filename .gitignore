@@ -13,3 +13,4 @@ slurm-**.out
 .virtual_documents/
 **.pl
 **.sh
+doc/

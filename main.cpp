@@ -252,9 +252,11 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     DataType structureFactorCDWTot = 0.0;
 
     DataType obsEnergyTot = 0.0;
+    DataType obsSignTotTrue = 0.0;
     DataType obsEdgeCorrelatorTot = 0.0;
     DataType obsEdgeCorrelatorZ2Tot = 0.0;
     DataType obsZ2Tot = 0.0;
+    DataType obsNelectronsTot = 0.0;
     // DataType obsEdgeCorrelatorZ2PlusTot = 0.0;
     // DataType obsEdgeCorrelatorZ2MinusTot = 0.0;
     DataType obsStructureFactorCDWTot = 0.0;
@@ -283,7 +285,10 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
 	        // pfqmc.sign = signRaw;
         }
         
-        // obsEnergy = config.energyFromGreensFunc(pfqmc.g);
+        obsEnergy = config.energyFromGreensFunc(pfqmc.g);
+        obsEnergyTot += sign * obsEnergy;
+        obsSignTotTrue += sign;
+
         obsEdgeCorrelator = config.EdgeCorrelator(pfqmc.g);
         obsZ2 = config.Z2FermionParity(pfqmc.g);
         obsEdgeCorrelatorZ2 = config.Z2FermionParityEdgeCorrelator(pfqmc.g);
@@ -336,6 +341,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         if (i == evaluationLength - 1) {
         // if ( i % 20 == 0) {
             std::cout << filename << " finished" << std::endl;
+            std::cout << "AveEnergy = " << obsEnergyTot / obsSignTotTrue << " sign = " << obsSignTotTrue / double(evaluationLength) << "\n"; 
             // << "AveSign = " << SignTot / double(i + 1) 
             // << " AveZ2 = " << obsZ2Tot / SignTot 
             // << " AveZ2PlusSign = " << z2PlusSignTot / double(i + 1) 
@@ -419,7 +425,11 @@ int main(int argc, char* argv[]) {
         nseed = std::stoi(argv[8]);
         evaluationLength = std::stoi(argv[9]);
         filepath = argv[10];
-
+        if (argc == 11) { 
+            mu = 0.0;
+        } else {
+            mu = std::stod(argv[11]);
+        }
 
         int numprocs, myid;
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -432,8 +442,8 @@ int main(int argc, char* argv[]) {
         }
         
         // filename = "chain-Lx-Ltau-V-delta-myid-seed.out"
-        sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%d-%d.out", 
-            filepath, Lx, LTau, V, delta, myid, nseeds[myid]);
+        sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%.2lf-%d-%d-%.2lf.out", 
+            filepath, Lx, LTau, dt, V, delta, myid, nseeds[myid], mu);
         std::cout << "filename = " << filename << std::endl;
         if (argc == 11) { 
             ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);

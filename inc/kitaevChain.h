@@ -275,6 +275,7 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         DataType r = 0.0;
         DataType tmp = (0.5i);
         DataType tmpDelta = (0.5i) * delta;
+        DataType tmpMu = (0.5i) * mu;
         int idx1, idx2;
         int Li = Lx;
         
@@ -314,6 +315,13 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
             r += tmp * g(idxi1, idxj1) * g(idxi2, idxj2);
             r += tmp * g(idxi1, idxj2) * g(idxj1, idxi2);
             r -= tmp * g(idxi1, idxi2) * g(idxj1, idxj2);
+        }
+
+        //chemical potential part
+        for (int i=0; i<Lx; i++) {
+            idx1 = majoranaCoord2Idx(i, 0);
+            idx2 = majoranaCoord2Idx(i, 1);
+            r -= tmpMu * g(idx1, idx2);
         }
 
        return r;
