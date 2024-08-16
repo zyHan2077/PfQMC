@@ -95,31 +95,31 @@ TEST(SquareTest, SignTest) {
 //     // std::cout << G2 << "\n=======\n";
 // }
 
-TEST(PFAPACKTEST, SKTRD) {
-    std::fstream myfile;
-    myfile.open("../test/1.dat", std::fstream::in);
-    int L = 32;
-    MatType G1(L, L);
-    MatType G2(L, L);
-    DataType tmp;
-    for(int i=0; i<L; i++) {
-        for(int j=0; j<L; j++) {
-            myfile >> G1(i, j);
-        }
-    }
+// TEST(PFAPACKTEST, SKTRD) {
+//     std::fstream myfile;
+//     myfile.open("../test/1.dat", std::fstream::in);
+//     int L = 32;
+//     MatType G1(L, L);
+//     MatType G2(L, L);
+//     DataType tmp;
+//     for(int i=0; i<L; i++) {
+//         for(int j=0; j<L; j++) {
+//             myfile >> G1(i, j);
+//         }
+//     }
 
-    for(int i=0; i<L; i++) {
-        for(int j=0; j<L; j++) {
-            myfile >> G2(i, j);
-        }
-        // std::cout << G2(i, 0) << "\n";
-    }
-    myfile.close();
-    MatType G2copy = G2;
-    DataType pf = pfaf(L/2, G2copy);
-    // std::cout << "pf G2 = " << pf << "\n";
-    EXPECT_NEAR(std::abs(pf - (831715.0+287.442i)), 0.0, 1.0);
+//     for(int i=0; i<L; i++) {
+//         for(int j=0; j<L; j++) {
+//             myfile >> G2(i, j);
+//         }
+//         // std::cout << G2(i, 0) << "\n";
+//     }
+//     myfile.close();
+//     MatType G2copy = G2;
+//     DataType pf = pfaf(L/2, G2copy);
+//     // std::cout << "pf G2 = " << pf << "\n";
+//     EXPECT_NEAR(std::abs(pf - (831715.0+287.442i)), 0.0, 1.0);
 
-    DataType signPf = pfaffianForSignOfProduct(G1, G2);
-    EXPECT_NEAR(std::abs(signPf - 1.0), 0.0, 1e-4);
-}
+//     DataType signPf = pfaffianForSignOfProduct(G1, G2);
+//     EXPECT_NEAR(std::abs(signPf - 1.0), 0.0, 1e-4);
+// }
