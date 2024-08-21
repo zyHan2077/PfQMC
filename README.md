@@ -2,6 +2,8 @@
 
 A prototype implementation of the Pfaffian Quantum Monte Carlo (PfQMC) algorithm for simulating fermionic quantum many-body systems. This repository implements the spinless t-V model with possible p+ip pairing term, and the interacting Kitaev chain.
 
+Check on our paper [arXiv:2408.10311](https://arxiv.org/abs/2408.10311) for a complete description of the algorithm and related derivations.
+
 ## Usage
 
 ![build and test](https://github.com/zyHan2077/PfQMC/actions/workflows/main.yml/badge.svg)
