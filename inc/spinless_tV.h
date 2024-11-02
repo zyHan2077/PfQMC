@@ -15,11 +15,13 @@ class SpinlessTvUtils {
     int l;
     double lambdaV, chlV, shlV, thlV, etaM;
 
+    const int hsScheme;  
+
     const bool singleMaj;
 
     SpinlessTvUtils(int _Lx, int _Ly, double _dt, double _V, int _l, int _nDim,
-                    bool _singleMaj = false)
-        : singleMaj(_singleMaj) {
+                    bool _singleMaj = false, int _hsScheme = 0)
+        : singleMaj(_singleMaj), hsScheme(_hsScheme) {
         // model configuration
         Lx = _Lx;
         Ly = _Ly;
@@ -52,20 +54,33 @@ class SpinlessTvUtils {
             tmp = (-1.0) / tmp;
         }
 
-        int idx1, idx2;
-        if (!singleMaj) {
-            for (int i = 0; i < s.size(); i++) {
-                for (int k = 0; k < 2; k++) {
-                    aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+        if (hsScheme == 0) {
+            int idx1, idx2;
+            if (!singleMaj) {
+                for (int i = 0; i < s.size(); i++) {
+                    for (int k = 0; k < 2; k++) {
+                        aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+                        H(idx1, idx2) += -tmp * double(s(i));
+                        H(idx2, idx1) += +tmp * double(s(i));
+                    }
+                }
+            } else {
+                for (int i = 0; i < s.size(); i++) {
+                    aux2MajoranaIdx(i, 0, bondType, idx1, idx2);
                     H(idx1, idx2) += -tmp * double(s(i));
                     H(idx2, idx1) += +tmp * double(s(i));
                 }
             }
-        } else {
+        } else if (hsScheme == 1) {
+            int idxi1, idxi2, idxj1, idxj2;
+            assert(!singleMaj);
             for (int i = 0; i < s.size(); i++) {
-                aux2MajoranaIdx(i, 0, bondType, idx1, idx2);
-                H(idx1, idx2) += -tmp * double(s(i));
-                H(idx2, idx1) += +tmp * double(s(i));
+                aux2MajoranaIdx(i, 0, bondType, idxi1, idxj1);
+                aux2MajoranaIdx(i, 1, bondType, idxi2, idxj2);
+                H(idxi1, idxi2) += -tmp * double(s(i));
+                H(idxi2, idxi1) += +tmp * double(s(i));
+                H(idxj1, idxj2) += +tmp * double(s(i));
+                H(idxj2, idxj1) += -tmp * double(s(i));
             }
         }
     }
@@ -79,24 +94,44 @@ class SpinlessTvUtils {
         DataType ish = (1.0i) * shlV;
         if (inv) ish = -ish;
 
-        int idx1, idx2;
-        if (!singleMaj) {
-            for (int i = 0; i < s.size(); i++) {
-                for (int k = 0; k < 2; k++) {
-                    aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+        if (hsScheme == 0) {
+            // B = exp(λ/2 * s * (i γi1 γj1 + i γi2 γj2))
+            int idx1, idx2;
+            if (!singleMaj) {
+                for (int i = 0; i < s.size(); i++) {
+                    for (int k = 0; k < 2; k++) {
+                        aux2MajoranaIdx(i, k, bondType, idx1, idx2);
+                        B(idx1, idx1) = ch;
+                        B(idx2, idx2) = ch;
+                        B(idx1, idx2) = +ish * double(s(i));
+                        B(idx2, idx1) = -ish * double(s(i));
+                    }
+                }
+            } else {
+                for (int i = 0; i < s.size(); i++) {
+                    aux2MajoranaIdx(i, 0, bondType, idx1, idx2);
                     B(idx1, idx1) = ch;
                     B(idx2, idx2) = ch;
                     B(idx1, idx2) = +ish * double(s(i));
                     B(idx2, idx1) = -ish * double(s(i));
                 }
             }
-        } else {
+        } else if (hsScheme == 1) {
+            // B = exp(λ/2 * s * (i γi1 γi2 - i γj1 γj2))
+            int idxi1, idxi2, idxj1, idxj2;
+            assert(!singleMaj);
             for (int i = 0; i < s.size(); i++) {
-                aux2MajoranaIdx(i, 0, bondType, idx1, idx2);
-                B(idx1, idx1) = ch;
-                B(idx2, idx2) = ch;
-                B(idx1, idx2) = +ish * double(s(i));
-                B(idx2, idx1) = -ish * double(s(i));
+                aux2MajoranaIdx(i, 0, bondType, idxi1, idxj1);
+                aux2MajoranaIdx(i, 1, bondType, idxi2, idxj2);
+                B(idxi1, idxi1) = ch;
+                B(idxi2, idxi2) = ch;
+                B(idxi1, idxi2) = +ish * double(s(i));
+                B(idxi2, idxi1) = -ish * double(s(i));
+
+                B(idxj1, idxj1) = ch;
+                B(idxj2, idxj2) = ch;
+                B(idxj1, idxj2) = -ish * double(s(i));
+                B(idxj2, idxj1) = +ish * double(s(i));
             }
         }
     }
@@ -116,6 +151,8 @@ class SpinlessVOperator : public Operator {
     // const int Naux; // number of auxillary fields (live on bonds)
     const int nDim;  // dimension of hamiltonian, number of sites × 2 (number of
                      // majorana species)
+
+    const int hsScheme; // 0: hopping channel, 1: density channel
     iVecType *s;
     MatType B;
     MatType B_inv;
@@ -130,11 +167,12 @@ class SpinlessVOperator : public Operator {
           etaM(_config->etaM),
           bondType(_bondType),
           nDim(config->nDim),
-          singleMaj(_config->singleMaj) {
+          singleMaj(_config->singleMaj),
+          hsScheme(_config->hsScheme) {
         s = _s;
         rd = _rd;
         B = MatType::Identity(nDim, nDim);
-        config->InteractionBGenerator(B, *s, bondType);
+        config->InteractionBGenerator(B, *s, bondType, false);
     }
 
     ~SpinlessVOperator() { delete s; }
@@ -157,18 +195,32 @@ class SpinlessVOperator : public Operator {
         const int inc = 1;
         DataType alpha;
 
-        config->aux2MajoranaIdx(idxAux, 0, bondType, idx1, idx2);
-        config->aux2MajoranaIdx(idxAux, 1, bondType, idx3, idx4);
-        tmp[0] =
-            (1.0 - ((1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2)));
-        tmp[1] =
-            (1.0 - ((1.0i) * (config->thlV) * double(auxCur) * g(idx3, idx4)));
-        r = tmp[0] * tmp[1];
-        // std::cout << "r1" << r << " ";
-        r += (config->thlV * config->thlV) * ((g(idx1, idx3) * g(idx2, idx4)) -
-                                              (g(idx2, idx3) * g(idx1, idx4)));
-        // std::cout << " r2" << r << "\n";
-        r *= etaM;
+        config->aux2MajoranaIdx(idxAux, 0, bondType, idx1, idx2); // 1j, 1k
+        config->aux2MajoranaIdx(idxAux, 1, bondType, idx3, idx4); // 2j, 2k
+
+        if (hsScheme == 0) {
+            tmp[0] =
+                (1.0 - ((1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx2)));
+            tmp[1] =
+                (1.0 - ((1.0i) * (config->thlV) * double(auxCur) * g(idx3, idx4)));
+            r = tmp[0] * tmp[1];
+            // std::cout << "r1" << r << " ";
+            r += (config->thlV * config->thlV) * ((g(idx1, idx3) * g(idx2, idx4)) -
+                                                (g(idx2, idx3) * g(idx1, idx4)));
+            // std::cout << " r2" << r << "\n";
+            r *= etaM;
+        } else if (hsScheme == 1) {
+            tmp[0] =
+                (1.0 - ((1.0i) * (config->thlV) * double(auxCur) * g(idx1, idx3)));
+            tmp[1] =
+                (1.0 + ((1.0i) * (config->thlV) * double(auxCur) * g(idx2, idx4)));
+            r = tmp[0] * tmp[1];
+            // std::cout << "r1" << r << " ";
+            r -= (config->thlV * config->thlV) * ((g(idx1, idx2) * g(idx3, idx4)) -
+                                                (g(idx3, idx2) * g(idx1, idx4)));
+            // std::cout << " r2" << r << "\n";
+            r *= etaM;
+        }
         // for (int imaj = 0; imaj < 2; imaj ++) {
         //     config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
         //     // idx1 = mConfig->majoranaCoord2Idx(m.ix, m.iy, 0, imaj);
@@ -187,28 +239,64 @@ class SpinlessVOperator : public Operator {
             //     std::cout << "r= " << r << " sign(r)= " << t << "\n";
             // }
             signCur *= (r / std::abs(r));
-            for (int imaj = 0; imaj < 2; imaj++) {
-                config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
-                if (imaj == 1) {
-                    tmp[1] = (1.0 - ((1.0i) * (config->thlV) * double(auxCur) *
-                                     g(idx1, idx2)));
-                }
-                // update aux field and B matrix
-                (*s)(idxAux) = -auxCur;
-                B(idx1, idx2) = -B(idx1, idx2);
-                B(idx2, idx1) = -B(idx2, idx1);
 
-                // update Green's function
-                cVecType x1 = -g.col(idx1);
-                cVecType x2 = -g.col(idx2);
-                x1(idx1) += 2;
-                x2(idx2) += 2;
-                alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[imaj];
-                zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
-                      g.data(), &nDim);
-                alpha = -alpha;
-                zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
-                      g.data(), &nDim);
+            if (hsScheme == 0) {
+                for (int imaj = 0; imaj < 2; imaj++) {
+                    config->aux2MajoranaIdx(idxAux, imaj, bondType, idx1, idx2);
+                    if (imaj == 1) {
+                        tmp[1] = (1.0 - ((1.0i) * (config->thlV) * double(auxCur) *
+                                        g(idx1, idx2)));
+                    }
+                    // update aux field and B matrix
+                    (*s)(idxAux) = -auxCur;
+                    B(idx1, idx2) = -B(idx1, idx2);
+                    B(idx2, idx1) = -B(idx2, idx1);
+
+                    // update Green's function
+                    cVecType x1 = -g.col(idx1);
+                    cVecType x2 = -g.col(idx2);
+                    x1(idx1) += 2;
+                    x2(idx2) += 2;
+                    alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[imaj];
+                    zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
+                        g.data(), &nDim);
+                    alpha = -alpha;
+                    zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
+                        g.data(), &nDim);
+                }
+            } else if (hsScheme == 1) {
+                int idxj1, idxk1, idxj2, idxk2;
+                config->aux2MajoranaIdx(idxAux, 0, bondType, idxj1, idxk1);
+                config->aux2MajoranaIdx(idxAux, 1, bondType, idxj2, idxk2);
+                for (int iaux = 0; iaux < 2; iaux++) {
+                    if (iaux == 0) {
+                        idx1 = idxj1;
+                        idx2 = idxj2;
+                    } else {
+                        idx1 = idxk1;
+                        idx2 = idxk2;
+                        tmp[1] = (1.0 + ((1.0i) * (config->thlV) * double(auxCur) *
+                                        g(idx1, idx2)));
+                    }
+
+                    // update aux field and B matrix
+                    (*s)(idxAux) = -auxCur;
+                    B(idx1, idx2) = -B(idx1, idx2);
+                    B(idx2, idx1) = -B(idx2, idx1);
+
+                    // update Green's function
+                    cVecType x1 = -g.col(idx1);
+                    cVecType x2 = -g.col(idx2);
+                    x1(idx1) += 2;
+                    x2(idx2) += 2;
+                    alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[iaux];
+                    if (iaux == 1) alpha = -alpha;
+                    zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
+                        g.data(), &nDim);
+                    alpha = -alpha;
+                    zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
+                        g.data(), &nDim);
+                }
             }
         }
     };

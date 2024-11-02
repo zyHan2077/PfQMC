@@ -211,7 +211,7 @@ int main_square() {
     return 0;
 }
 
-int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength, char* filename, double mu=0.0) {
+int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads, int nseed, int evaluationLength, char* filename, double mu=0.0, int hsScheme=0, int boundary=1) {
     double start_time = omp_get_wtime();
     mkl_set_num_threads(nthreads);
 
@@ -219,12 +219,12 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
 
     int stabilizationTime = 10;
     int thermalLength = 200;
-    int boundary = 1;
+    // int boundary = 0;
     int aveLength = 100;
     // int evaluationLength = 1000;
 
     // int nDim = Lx * Ly * 4;
-    SpinlessTvChainUtils config(Lx, dt, V, LTau, boundary, delta, mu);
+    SpinlessTvChainUtils config(Lx, dt, V, LTau, boundary, delta, mu, hsScheme);
     rdGenerator rd(nseed);
     Chain_tV walker(&config, &rd);
     PfQMC pfqmc(&walker, stabilizationTime);
@@ -411,7 +411,7 @@ int main(int argc, char* argv[]) {
 
         // fstream fin()
     } else if (std::strcmp(argv[1], "--chain") == 0) {
-        int Lx, LTau, nthreads, nseed, evaluationLength;
+        int Lx, LTau, nthreads, nseed, evaluationLength, hsScheme, boundary;
         double dt, V, delta, mu;
         char* filepath;
         char filename[100];
@@ -425,11 +425,14 @@ int main(int argc, char* argv[]) {
         nseed = std::stoi(argv[8]);
         evaluationLength = std::stoi(argv[9]);
         filepath = argv[10];
-        if (argc == 11) { 
-            mu = 0.0;
-        } else {
-            mu = std::stod(argv[11]);
-        }
+        // if (argc <= 11) { 
+        //     mu = 0.0;
+        // } else {
+        //     mu = std::stod(argv[11]);
+        // }
+        mu = std::stod(argv[11]);
+        hsScheme = std::stoi(argv[12]);
+        boundary = std::stoi(argv[13]);
 
         int numprocs, myid;
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -445,12 +448,12 @@ int main(int argc, char* argv[]) {
         sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%.2lf-%d-%d-%.2lf.out", 
             filepath, Lx, LTau, dt, V, delta, myid, nseeds[myid], mu);
         std::cout << "filename = " << filename << std::endl;
-        if (argc == 11) { 
-            ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
-        } else {
-            mu = std::stod(argv[11]);
-            ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename, mu);
-        }
+        // if (argc == 11) { 
+        //     ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);
+        // } else {
+        mu = std::stod(argv[11]);
+        ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename, mu, hsScheme, boundary);
+        // }
     } else {
         std::cout << argv[1] << ": invalid arguments\n";
         ok = 0;

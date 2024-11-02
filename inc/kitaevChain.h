@@ -14,13 +14,16 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
     double mu;
     int boundaryType; // 0: PBC, 1: OBC
 
-    SpinlessTvChainUtils(int _L, double _dt, double _V, int _l, int _boundary, double _delta=0.0, double _mu=0.0) 
-        : SpinlessTvUtils(_L, 1, _dt, _V, _l, _L*2) {
+    int hsScheme;
+
+    SpinlessTvChainUtils(int _L, double _dt, double _V, int _l, int _boundary, double _delta=0.0, double _mu=0.0, int _hsScheme=0) 
+        : SpinlessTvUtils(_L, 1, _dt, _V, _l, _L*2, false, _hsScheme) {
         
         boundaryType = _boundary;
         nsites = _L;
         delta = _delta;
         mu = _mu;
+        hsScheme = _hsScheme;
     }
 
     inline int majoranaCoord2Idx(int ix, int imaj) const {
