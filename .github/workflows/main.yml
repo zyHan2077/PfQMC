@@ -85,7 +85,7 @@ jobs:
       run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
 
     - name: install pfapack
-      run: export PATH=/opt/intel/oneapi/compiler/2024.2/bin:$PATH && cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make && cd ../../..
+      run: export PATH=/opt/intel/oneapi/compiler/2025.0/bin:$PATH && cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make && cd ../../..
         
     - name: CMake Configure 
       run: cmake -B build -DEIGEN3_INCLUDE_DIR=/opt
