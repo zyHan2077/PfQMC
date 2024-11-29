@@ -218,7 +218,7 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
     std::fstream fout(filename, std::fstream::out);
 
     int stabilizationTime = 10;
-    int thermalLength = 200;
+    int thermalLength = 1000;
     // int boundary = 0;
     int aveLength = 100;
     // int evaluationLength = 1000;
@@ -297,46 +297,51 @@ int main_chain(int Lx, int LTau, double dt, double V, double delta,int nthreads,
         structureFactorCDWq = config.StructureFactorCDWOffset(pfqmc.g);
         config.StructureFactorCDWFFT(pfqmc.g, obsCDWFT);
 
+        // ------------- output each iteration -----------
+        fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 << " CDW = " << structureFactorCDW << " CDWq = " << structureFactorCDWq << std::endl;
+
+        // ------------- end of output each iteration ----
+
 
         // fout << "iter = " << i << " sign = " << sign << " z2 = " << obsZ2 << " edgeCorrelator = " << obsEdgeCorrelator << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2 
         // << " CDW = " << structureFactorCDW 
         // << " CDWM4 = " << structureFactorCDWM4 << " CDWq = " << structureFactorCDWq << std::endl;
 
-        SignTot += sign;
-        obsZ2Tot += sign * obsZ2;
-        // z2PlusSignTot += sign * (1.0 + obsZ2) / 2.0;
-        // z2MinusSignTot += sign * (1.0 - obsZ2) / 2.0;
-        obsEdgeCorrelatorTot += sign * obsEdgeCorrelator;
-        obsEdgeCorrelatorZ2Tot += sign * obsEdgeCorrelatorZ2;
-        // obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
-        // obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
-        obsStructureFactorCDWTot += sign * structureFactorCDW;
-        // obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
-        obsStructureFactorCDWqTot += sign * structureFactorCDWq;
-        obsCDWFTTot += sign * obsCDWFT;
+        // SignTot += sign;
+        // obsZ2Tot += sign * obsZ2;
+        // // z2PlusSignTot += sign * (1.0 + obsZ2) / 2.0;
+        // // z2MinusSignTot += sign * (1.0 - obsZ2) / 2.0;
+        // obsEdgeCorrelatorTot += sign * obsEdgeCorrelator;
+        // obsEdgeCorrelatorZ2Tot += sign * obsEdgeCorrelatorZ2;
+        // // obsEdgeCorrelatorZ2PlusTot += sign * (obsEdgeCorrelator + obsEdgeCorrelatorZ2) / 2.0;
+        // // obsEdgeCorrelatorZ2MinusTot += sign * (obsEdgeCorrelator - obsEdgeCorrelatorZ2) / 2.0;
+        // obsStructureFactorCDWTot += sign * structureFactorCDW;
+        // // obsStructureFactorCDWM4Tot += sign * structureFactorCDWM4;
+        // obsStructureFactorCDWqTot += sign * structureFactorCDWq;
+        // obsCDWFTTot += sign * obsCDWFT;
 
         // std::cout << "iter = " << i << " cdw = " << structureFactorCDW << " cdw also = " << obsCDWFT[4] << std::endl;
 
-        if ((i+1) % aveLength == 0) {
-            double aveLengthD = double(aveLength);
-            fout << "iter = " << i << " sign = " << SignTot / aveLengthD << " z2 = " << obsZ2Tot / aveLengthD << " edgeCorrelator = " << obsEdgeCorrelatorTot / aveLengthD << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2Tot / aveLengthD << " CDW = " << obsStructureFactorCDWTot / aveLengthD << " CDWq = " << obsStructureFactorCDWqTot / aveLengthD << std::endl;
+        // if ((i+1) % aveLength == 0) {
+        //     double aveLengthD = double(aveLength);
+        //     fout << "iter = " << i << " sign = " << SignTot / aveLengthD << " z2 = " << obsZ2Tot / aveLengthD << " edgeCorrelator = " << obsEdgeCorrelatorTot / aveLengthD << " edgeZ2Correlator = " << obsEdgeCorrelatorZ2Tot / aveLengthD << " CDW = " << obsStructureFactorCDWTot / aveLengthD << " CDWq = " << obsStructureFactorCDWqTot / aveLengthD << std::endl;
 
-            // fout << "obsCDWFT = ";
-            for (int j = 0; j < Lx; j++) {
-                fout << obsCDWFTTot[j].real() / aveLengthD << " ";
-            }
-            fout << std::endl;
-            SignTot = 0.0;
-            obsZ2Tot = 0.0;
-            z2PlusSignTot = 0.0;
-            z2MinusSignTot = 0.0;
-            obsEdgeCorrelatorTot = 0.0;
-            obsEdgeCorrelatorZ2Tot = 0.0;
-            obsStructureFactorCDWTot = 0.0;
-            // obsStructureFactorCDWM4Tot = 0.0;
-            obsStructureFactorCDWqTot = 0.0;
-            obsCDWFTTot = cVecType::Zero(Lx);
-        }
+        //     // fout << "obsCDWFT = ";
+        //     for (int j = 0; j < Lx; j++) {
+        //         fout << obsCDWFTTot[j].real() / aveLengthD << " ";
+        //     }
+        //     fout << std::endl;
+        //     SignTot = 0.0;
+        //     obsZ2Tot = 0.0;
+        //     z2PlusSignTot = 0.0;
+        //     z2MinusSignTot = 0.0;
+        //     obsEdgeCorrelatorTot = 0.0;
+        //     obsEdgeCorrelatorZ2Tot = 0.0;
+        //     obsStructureFactorCDWTot = 0.0;
+        //     // obsStructureFactorCDWM4Tot = 0.0;
+        //     obsStructureFactorCDWqTot = 0.0;
+        //     obsCDWFTTot = cVecType::Zero(Lx);
+        // }
 
         if (i == evaluationLength - 1) {
         // if ( i % 20 == 0) {
@@ -445,8 +450,8 @@ int main(int argc, char* argv[]) {
         }
         
         // filename = "chain-Lx-Ltau-V-delta-myid-seed.out"
-        sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%.2lf-%d-%d-%.2lf.out", 
-            filepath, Lx, LTau, dt, V, delta, myid, nseeds[myid], mu);
+        sprintf(filename, "%schain-%d-%d-%.2lf-%.2lf-%.2lf-%d-%d-%.2lf-BC=%d.out", 
+            filepath, Lx, LTau, dt, V, delta, myid, nseeds[myid], mu, boundary);
         std::cout << "filename = " << filename << std::endl;
         // if (argc == 11) { 
         //     ok = main_chain(Lx, LTau, dt, V, delta, nthreads, nseeds[myid], evaluationLength, filename);

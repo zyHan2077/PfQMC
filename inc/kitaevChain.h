@@ -50,11 +50,11 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         DataType tmp = (1.0i);
         DataType tmpDelta = (1.0i)*delta;
         DataType tmpMu = (1.0i)*mu;
-        int Li = Lx;
-        if (boundaryType == 1) {
-            Li = Lx - 1;
-        }
-        for (int i=0; i<Li; i++) {
+        // int Li = Lx;
+        // if (boundaryType == 1) {
+        //     Li = Lx - 1;
+        // }
+        for (int i=0; i<Lx-1; i++) {
             for (int k=0; k<2; k++) {
                 idx1 = majoranaCoord2Idx(i, k);
                 idx2 = majoranaCoord2Idx((i+1)%Lx, k);
@@ -79,6 +79,38 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
             idx2 = majoranaCoord2Idx((i+1)%Lx, 1);
             H(idx1, idx2) += -tmpDelta;
             H(idx2, idx1) += tmpDelta;
+        }
+
+        if (boundaryType == 0) { // PBC
+            int idxL1 = majoranaCoord2Idx(Lx-1, 0);
+            int idxL2 = majoranaCoord2Idx(Lx-1, 1);
+            int idx11 = majoranaCoord2Idx(0, 0);
+            int idx12 = majoranaCoord2Idx(0, 1);
+            if (Lx % 2 == 0) {
+                // idx1 = majoranaCoord2Idx(Lx-1, 0);
+                // idx2 = majoranaCoord2Idx(0, 0);
+                H(idxL1, idx11) += tmpDelta;
+                H(idx11, idxL1) += -tmpDelta;
+                H(idxL1, idx11) += -tmp;
+                H(idx11, idxL1) += +tmp;
+
+                // idx1 = majoranaCoord2Idx(Lx-1, 1);
+                // idx2 = majoranaCoord2Idx(0, 1);
+                H(idxL2, idx12) += -tmpDelta;
+                H(idx12, idxL2) += tmpDelta;
+                H(idxL2, idx12) += -tmp;
+                H(idx12, idxL2) += +tmp;
+            } else {
+                H(idxL1, idx12) += -tmp;
+                H(idx12, idxL1) += +tmp;
+                H(idxL2, idx11) += +tmp;
+                H(idx11, idxL2) += -tmp;
+
+                H(idxL1, idx12) += -tmpDelta;
+                H(idx12, idxL1) += +tmpDelta;
+                H(idxL2, idx11) += -tmpDelta;
+                H(idx11, idxL2) += +tmpDelta;    
+            }
         }
 
         // chemical potential
@@ -282,11 +314,11 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
         int idx1, idx2;
         int Li = Lx;
         
-        if (boundaryType == 1) {
-            Li = Lx - 1;
-        }
+        // if (boundaryType == 1) {
+        //     Li = Lx - 1;
+        // }
 
-        for (int i=0; i<Li; i++) {
+        for (int i=0; i<Lx-1; i++) {
             for (int k=0; k<2; k++) {
                 idx1 = majoranaCoord2Idx(i, k);
                 idx2 = majoranaCoord2Idx((i + 1) % Lx, k);
@@ -308,9 +340,45 @@ class  SpinlessTvChainUtils : public SpinlessTvUtils {
 
         }
 
+        if (boundaryType == 0) { // PBC
+            int idxL1 = majoranaCoord2Idx(Lx-1, 0);
+            int idxL2 = majoranaCoord2Idx(Lx-1, 1);
+            int idx11 = majoranaCoord2Idx(0, 0);
+            int idx12 = majoranaCoord2Idx(0, 1);
+            if (Lx % 2 == 0) {
+                r += tmpDelta * g(idxL1, idx11);
+                r += -tmp * g(idxL1, idx11);
+
+                r += -tmpDelta * g(idxL2, idx12);
+                r += -tmp * g(idxL2, idx12);
+                // H(idxL1, idx11) += tmpDelta;
+                // H(idx11, idxL1) += -tmpDelta;
+                // H(idxL1, idx11) += -tmp;
+                // H(idx11, idxL1) += +tmp;
+
+                // H(idxL2, idx12) += -tmpDelta;
+                // H(idx12, idxL2) += tmpDelta;
+                // H(idxL2, idx12) += -tmp;
+                // H(idx12, idxL2) += +tmp;
+            } else {
+                r += -tmp * g(idxL1, idx12);
+                r += tmp * g(idxL2, idx11);
+                // H(idxL1, idx12) += -tmp;
+                // H(idx12, idxL1) += +tmp;
+                // H(idxL2, idx11) += +tmp;
+                // H(idx11, idxL2) += -tmp;
+                r += -tmpDelta * g(idxL1, idx12);
+                r += -tmpDelta * g(idxL2, idx11);
+                // H(idxL1, idx12) += -tmpDelta;
+                // H(idx12, idxL1) += +tmpDelta;
+                // H(idxL2, idx11) += -tmpDelta;
+                // H(idx11, idxL2) += +tmpDelta;    
+            }
+        }
+
         int idxi1, idxi2, idxj1, idxj2;
         tmp = (0.25) * V;
-        for (int i = 0; i < Li; i++) {
+        for (int i = 0; i < Lx-1; i++) {
             idxi1 = majoranaCoord2Idx(i, 0);             // i1
             idxi2 = majoranaCoord2Idx(i, 1);             // i2
             idxj1 = majoranaCoord2Idx((i + 1) % Lx, 0);  // j1
@@ -381,6 +449,15 @@ class Chain_tV : public Spinless_tV {
                 nBond[1] = (nSites - 1) / 2;
             }
         }
+
+        // only OBC is used for interaction terms
+        // if (nSites % 2 == 0) {
+        //     nBond[0] = nSites / 2;
+        //     nBond[1] = (nSites / 2) - 1;
+        // } else {
+        //     nBond[0] = (nSites - 1) / 2;
+        //     nBond[1] = (nSites - 1) / 2;
+        // }
 
         // std::cout << "nBond = " << nBond[0] << " " << nBond[1] << std::endl;
 
