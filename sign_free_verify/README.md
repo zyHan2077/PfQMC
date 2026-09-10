@@ -127,21 +127,24 @@ Pfaffian 给出相同负号。删除配对的测试还要求迹确实变化，�
 
 ## 编译与复现
 
+本机 WSL2 环境、依赖路径及恢复步骤统一记录在 [CONTEXT.md](../CONTEXT.md)。
+
 依赖与原仓库相同：Intel oneAPI C++/Fortran/MKL/MPI、Eigen 3.4、GoogleTest、CMake。
 在仓库根目录的 Bash 中执行（Eigen 与 GTest 路径按环境修改）：
 
 ```bash
 source /opt/intel/oneapi/setvars.sh
+export PATH="$PWD/build/python-tools/cmake/data/bin:$PATH"
 make -C inc/pfapack/fortran mFC=ifx
 make -C inc/pfapack/c_interface
-cmake -S . -B build -DEIGEN3_INCLUDE_DIR="$PWD/build/eigen" \
+cmake -S . -B build -DCMAKE_CXX_COMPILER=mpiicpx -DEIGEN3_INCLUDE_DIR="$PWD/build/eigen" \
   -DCMAKE_PREFIX_PATH=/home/han/miniconda3
 cmake --build build -j 2
 ctest --test-dir build --output-on-failure
 build/sign_free_check --samples 10000 --seed 240810311 \
-  --csv '验算sign free/samples_240810311.csv'
+  --csv 'sign_free_verify/samples_240810311.csv'
 build/sign_free_check --samples 1000 --seed 910 \
-  --csv '验算sign free/samples_910.csv'
+  --csv 'sign_free_verify/samples_910.csv'
 ```
 
 本机 CMake 安装在 `build/python-tools/cmake/data/bin/`，可将以上 `cmake`、`ctest`
