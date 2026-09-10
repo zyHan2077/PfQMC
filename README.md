@@ -23,6 +23,15 @@ cmake .. -DEIGEN3_INCLUDE_DIR=/path/to/eigen3 & make
 
 See `.github/workflows/main.yml` for a complete build and test workflow.
 
+## Four-mode sign-free validation
+
+The [four-mode validation](<验算sign free/README.md>) implements a Hermitian
+pairing model and Gaussian auxiliary fields, cross-checking exact Fock traces,
+an auxiliary representation formula, and the existing signed Pfaffian routines.
+Build target `sign_free_check`; its small regression is included in CTest.
+See the [validation report](<验算sign free/REPORT.md>) for recorded random samples
+and the original program's build and runtime results.
+
 ## Program Design
 
 ```mermaid

@@ -47,6 +47,14 @@ target_link_libraries(main_test PUBLIC ${PROJECT_SOURCE_DIR}/inc/pfapack/c_inter
 include(GoogleTest)
 gtest_discover_tests(main_test)
 
+# Independent four-mode Fock-space / Pfaffian validation.
+add_executable(sign_free_check "sign_free_check/four_mode.cpp" src/skewMatUtils.cpp)
+target_compile_features(sign_free_check PRIVATE cxx_std_17)
+target_link_libraries(sign_free_check PRIVATE MKL::MKL
+    ${PROJECT_SOURCE_DIR}/inc/pfapack/c_interface/libcpfapack.a
+    ${PROJECT_SOURCE_DIR}/inc/pfapack/fortran/libpfapack.a)
+add_test(NAME SignFree.FourMode COMMAND sign_free_check --samples 24)
+
 # add_test(NAME mytest COMMAND myapp)
 # if(MKL_ENV)
 #   set_tests_properties(mytest PROPERTIES ENVIRONMENT "${MKL_ENV}")

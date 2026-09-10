@@ -14,3 +14,7 @@ slurm-**.out
 **.pl
 **.sh
 doc/
+sign_free_verify/*.csv
+sign_free_verify/*.log
+sign_free_verify/*.sha256
+sign_free_verify/logs
