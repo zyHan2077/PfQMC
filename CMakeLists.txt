@@ -37,7 +37,7 @@ target_include_directories(main PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCL
 target_link_libraries(main PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_link_libraries(main PUBLIC ${PROJECT_SOURCE_DIR}/inc/pfapack/c_interface/libcpfapack.a ${PROJECT_SOURCE_DIR}/inc/pfapack/fortran/libpfapack.a)
 
-set(TEST_LIST ./test/main_test.cpp ./test/squareLatticeTest.cpp)
+set(TEST_LIST ./test/main_test.cpp ./test/squareLatticeTest.cpp ./test/performanceTest.cpp)
 add_executable(main_test ${TEST_LIST}  ${SRC_LIST})
 target_compile_options(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(main_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
@@ -61,3 +61,9 @@ add_test(NAME SignFree.FourMode COMMAND sign_free_check --samples 24)
 # endif()
 # add_executable(rapidtest src/rapidjsontest.cpp)
 # target_link_libraries(main libyaml)
+
+# Reproducible simulation benchmark; output is CSV, validation is outside timing.
+add_executable(pfqmc_bench bench/pfqmc_bench.cpp ${SRC_LIST})
+target_link_libraries(pfqmc_bench PRIVATE MKL::MKL
+    ${PROJECT_SOURCE_DIR}/inc/pfapack/c_interface/libcpfapack.a
+    ${PROJECT_SOURCE_DIR}/inc/pfapack/fortran/libpfapack.a)

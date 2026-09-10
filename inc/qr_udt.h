@@ -84,14 +84,12 @@ public:
             }
         }
 
-        int j;
-        for (int i = 0; i < nDim; i++)
+        // A P = Q R, so T = D^{-1} R P^T. Scatter the triangular
+        // columns directly instead of multiplying R by a dense permutation.
+        for (int col = 0; col < nDim; ++col)
         {
-            j = jpvt[i] - 1;
-            T(i, j) = 1;
+            T.col(jpvt[col] - 1).head(col + 1) = A.col(col).head(col + 1);
         }
-
-        cblas_ztrmm(CblasColMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, nDim, nDim, &one, A.data(), nDim, T.data(), nDim);
 
         LAPACKE_zungqr(LAPACK_COL_MAJOR, nDim, nDim, nDim, A.data(), nDim, tau);
 

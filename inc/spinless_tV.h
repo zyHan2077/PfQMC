@@ -141,6 +141,66 @@ class SpinlessVOperator : public Operator {
    protected:
     const SpinlessTvUtils *config;
     const double etaM;
+    // Each supported interaction layer is a set of disjoint two-site blocks.
+    // Detect the actual matrix support so unusual overlapping layers retain the
+    // dense implementation. Values are read from B after every accepted flip.
+    std::vector<std::pair<int, int>> blocks;
+    bool disjointBlocks = true;
+
+    void findBlocks() {
+        std::vector<int> partner(nDim, -1);
+        for (int j = 0; j < nDim; ++j) {
+            for (int i = 0; i < j; ++i) {
+                if (B(i,j) == zero && B(j,i) == zero) continue;
+                if (partner[i] != -1 || partner[j] != -1) {
+                    disjointBlocks = false;
+                    blocks.clear();
+                    return;
+                }
+                partner[i] = j; partner[j] = i;
+                blocks.emplace_back(i,j);
+            }
+        }
+        for (int i = 0; i < nDim; ++i) {
+            if (partner[i] == -1 && B(i,i) != one) {
+                disjointBlocks = false;
+                blocks.clear();
+                return;
+            }
+        }
+    }
+
+    void blockLeft(const MatType& A, MatType& out, const MatType& op) const {
+        assert(A.rows() == nDim);
+        if (!disjointBlocks) { out = op * A; return; }
+        // Also supports A and out referring to the same matrix. Unpaired rows
+        // are identity rows (e.g. open boundaries).
+        out = A;
+        for (int col = 0; col < out.cols(); ++col) {
+            for (const auto& pair : blocks) {
+                const int i = pair.first, j = pair.second;
+                const DataType x = out(i,col), y = out(j,col);
+                out(i,col) = op(i,i)*x + op(i,j)*y;
+                out(j,col) = op(j,i)*x + op(j,j)*y;
+            }
+        }
+    }
+
+    void blockRight(const MatType& A, MatType& out, const MatType& op) const {
+        assert(A.cols() == nDim);
+        if (!disjointBlocks) { out = A * op; return; }
+        out = A;
+        for (const auto& pair : blocks) {
+            const int i = pair.first, j = pair.second;
+            const DataType a = op(i,i), b = op(i,j);
+            const DataType c = op(j,i), d = op(j,j);
+            for (int row = 0; row < out.rows(); ++row) {
+                const DataType x = out(row,i), y = out(row,j);
+                out(row,i) = x*a + y*c;
+                out(row,j) = x*b + y*d;
+            }
+        }
+    }
     // delayed update for spinless t-V requires additional diagonalization
     // const int delay_max = 32;
     // cannot be larger than 64 (unless you change the threads value in
@@ -173,6 +233,7 @@ class SpinlessVOperator : public Operator {
         rd = _rd;
         B = MatType::Identity(nDim, nDim);
         config->InteractionBGenerator(B, *s, bondType, false);
+        findBlocks();
     }
 
     ~SpinlessVOperator() { delete s; }
@@ -363,22 +424,22 @@ class SpinlessVOperator : public Operator {
     }
 
     void right_multiply(const MatType &AIn, MatType &AOut) override {
-        AOut = AIn * B;
+        blockRight(AIn, AOut, B);
     }
 
     void left_multiply(const MatType &AIn, MatType &Aout) override {
-        Aout = B * AIn;
+        blockLeft(AIn, Aout, B);
     }
 
     void left_propagate(MatType &g, MatType &gTmp) override {
         reCalcInv();
-        gTmp = B * g;
-        g = gTmp * B_inv;
+        blockLeft(g, gTmp, B);
+        blockRight(gTmp, g, B_inv);
     }
     void right_propagate(MatType &g, MatType &gTmp) override {
         reCalcInv();
-        gTmp = B_inv * g;
-        g = gTmp * B;
+        blockLeft(g, gTmp, B_inv);
+        blockRight(gTmp, g, B);
     }
 
     iVecType *getAuxField() override { return s; }
@@ -398,8 +459,12 @@ class SpinlessVOperator : public Operator {
     // inline DataType getSignPfGInv() override;
 
     void stabilizedLeftMultiply(UDT &F) override {
-        // F.bMultUpdate(B);
-        F = B * F;
+        MatType mat;
+        left_multiply(F.U, mat);
+        mat = mat * F.D.asDiagonal();
+        UDT next(mat);
+        next.T = next.T * F.T;
+        F = std::move(next);
     }
 };
 
