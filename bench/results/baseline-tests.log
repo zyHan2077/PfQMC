@@ -1,0 +1,33 @@
+Test project /home/han/PfQMC-perf/build/perf
+      Start  1: PfaffianTest.SimpleIntegerMatrix
+ 1/14 Test  #1: PfaffianTest.SimpleIntegerMatrix ..........................   Passed    0.01 sec
+      Start  2: PfaffianTest.RandomEntries
+ 2/14 Test  #2: PfaffianTest.RandomEntries ................................   Passed    0.29 sec
+      Start  3: PfaffianTest.MonteCarloWeight
+ 3/14 Test  #3: PfaffianTest.MonteCarloWeight .............................   Passed    0.02 sec
+      Start  4: HamiltonianGeneratorTest.honeycombKineticAndInteraction
+ 4/14 Test  #4: HamiltonianGeneratorTest.honeycombKineticAndInteraction ...   Passed    2.75 sec
+      Start  5: FastUpdateTest.GreenFunction
+ 5/14 Test  #5: FastUpdateTest.GreenFunction ..............................   Passed    1.21 sec
+      Start  6: FastUpdateTest.RatioSquare
+ 6/14 Test  #6: FastUpdateTest.RatioSquare ................................   Passed    0.97 sec
+      Start  7: QR_Factorization.UDT_Decomposition
+ 7/14 Test  #7: QR_Factorization.UDT_Decomposition ........................   Passed    1.24 sec
+      Start  8: QR_Factorization.BMult
+ 8/14 Test  #8: QR_Factorization.BMult ....................................   Passed    0.73 sec
+      Start  9: PFQMC.GetSignTest
+ 9/14 Test  #9: PFQMC.GetSignTest .........................................   Passed    6.95 sec
+      Start 10: PFQMC.udtRTest
+10/14 Test #10: PFQMC.udtRTest ............................................   Passed    0.34 sec
+      Start 11: SinhTest.SinhH
+11/14 Test #11: SinhTest.SinhH ............................................   Passed    0.01 sec
+      Start 12: SquareTest.Config
+12/14 Test #12: SquareTest.Config .........................................   Passed    1.67 sec
+      Start 13: SquareTest.SignTest
+13/14 Test #13: SquareTest.SignTest .......................................   Passed    0.08 sec
+      Start 14: SignFree.FourMode
+14/14 Test #14: SignFree.FourMode .........................................   Passed    0.22 sec
+
+100% tests passed out of 14
+
+Total Test time (real) =  16.50 sec

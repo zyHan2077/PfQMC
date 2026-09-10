@@ -55,3 +55,10 @@ and the original program's build and runtime results.
     Operator-->DenseOperator;
     
 ```
+
+
+## Performance benchmarks
+
+See [the reproducible performance workflow](bench/README.md) and
+[measured large-lattice results](bench/RESULTS.md) for the interaction-block
+optimization, regression checks, and baseline comparisons.

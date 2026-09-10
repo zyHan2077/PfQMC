@@ -1,0 +1,81 @@
+baseline 0 ('majorana', 8, 12, 8, 1, 42) sweeps_s=1.2516491000000001
+blocks 0 ('majorana', 8, 12, 8, 1, 42) sweeps_s=0.83878947299999995
+baseline 0 ('majorana', 12, 12, 8, 1, 42) sweeps_s=13.705801689999999
+blocks 0 ('majorana', 12, 12, 8, 1, 42) sweeps_s=8.5814453539999995
+baseline 0 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=9.530623061
+blocks 0 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=5.9622594339999999
+baseline 0 ('majorana', 16, 12, 4, 1, 42) sweeps_s=41.683372994000003
+blocks 0 ('majorana', 16, 12, 4, 1, 42) sweeps_s=27.460214348000001
+baseline 0 ('square', 12, 12, 4, 1, 42) sweeps_s=8.8190138220000005
+blocks 0 ('square', 12, 12, 4, 1, 42) sweeps_s=5.8752750069999999
+baseline 0 ('chain0', 128, 12, 4, 1, 42) sweeps_s=3.605556516
+blocks 0 ('chain0', 128, 12, 4, 1, 42) sweeps_s=2.3089795870000001
+baseline 0 ('chain1', 128, 12, 4, 1, 42) sweeps_s=3.702225893
+blocks 0 ('chain1', 128, 12, 4, 1, 42) sweeps_s=2.3474720859999998
+baseline 0 ('majorana', 12, 12, 4, 4, 923) sweeps_s=2.9266864369999999
+blocks 0 ('majorana', 12, 12, 4, 4, 923) sweeps_s=2.038981953
+baseline 0 ('majorana', 8, 40, 4, 1, 123) sweeps_s=2.118700622
+blocks 0 ('majorana', 8, 40, 4, 1, 123) sweeps_s=1.4833557660000001
+blocks 1 ('majorana', 8, 12, 8, 1, 42) sweeps_s=0.82635319500000004
+baseline 1 ('majorana', 8, 12, 8, 1, 42) sweeps_s=1.2854176989999999
+blocks 1 ('majorana', 12, 12, 8, 1, 42) sweeps_s=8.4790127690000006
+baseline 1 ('majorana', 12, 12, 8, 1, 42) sweeps_s=13.756928793
+blocks 1 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=5.9211842880000001
+baseline 1 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=9.7406640580000001
+blocks 1 ('majorana', 16, 12, 4, 1, 42) sweeps_s=27.484648093000001
+baseline 1 ('majorana', 16, 12, 4, 1, 42) sweeps_s=41.658648700999997
+blocks 1 ('square', 12, 12, 4, 1, 42) sweeps_s=5.7703468170000001
+baseline 1 ('square', 12, 12, 4, 1, 42) sweeps_s=8.8607148809999998
+blocks 1 ('chain0', 128, 12, 4, 1, 42) sweeps_s=2.3437830420000001
+baseline 1 ('chain0', 128, 12, 4, 1, 42) sweeps_s=3.5873443229999999
+blocks 1 ('chain1', 128, 12, 4, 1, 42) sweeps_s=2.3652073520000001
+baseline 1 ('chain1', 128, 12, 4, 1, 42) sweeps_s=3.5478332140000002
+blocks 1 ('majorana', 12, 12, 4, 4, 923) sweeps_s=1.9777733959999999
+baseline 1 ('majorana', 12, 12, 4, 4, 923) sweeps_s=2.792438405
+blocks 1 ('majorana', 8, 40, 4, 1, 123) sweeps_s=1.416942793
+baseline 1 ('majorana', 8, 40, 4, 1, 123) sweeps_s=2.0532944240000002
+baseline 2 ('majorana', 8, 12, 8, 1, 42) sweeps_s=1.251277097
+blocks 2 ('majorana', 8, 12, 8, 1, 42) sweeps_s=0.82823648900000002
+baseline 2 ('majorana', 12, 12, 8, 1, 42) sweeps_s=13.767173162000001
+blocks 2 ('majorana', 12, 12, 8, 1, 42) sweeps_s=8.6071660839999993
+baseline 2 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=9.6819122400000008
+blocks 2 ('honeycomb', 8, 12, 8, 1, 42) sweeps_s=5.9497241000000001
+baseline 2 ('majorana', 16, 12, 4, 1, 42) sweeps_s=41.776883836000003
+blocks 2 ('majorana', 16, 12, 4, 1, 42) sweeps_s=27.339697853000001
+baseline 2 ('square', 12, 12, 4, 1, 42) sweeps_s=8.8683173879999995
+blocks 2 ('square', 12, 12, 4, 1, 42) sweeps_s=5.5812227219999997
+baseline 2 ('chain0', 128, 12, 4, 1, 42) sweeps_s=3.5737734400000001
+blocks 2 ('chain0', 128, 12, 4, 1, 42) sweeps_s=2.2802449349999998
+baseline 2 ('chain1', 128, 12, 4, 1, 42) sweeps_s=3.603131978
+blocks 2 ('chain1', 128, 12, 4, 1, 42) sweeps_s=2.3701883029999999
+baseline 2 ('majorana', 12, 12, 4, 4, 923) sweeps_s=2.7771851070000002
+blocks 2 ('majorana', 12, 12, 4, 4, 923) sweeps_s=2.1105629640000001
+baseline 2 ('majorana', 8, 40, 4, 1, 123) sweeps_s=2.0622981999999999
+blocks 2 ('majorana', 8, 40, 4, 1, 123) sweeps_s=1.422028469
+CASE ('majorana', 8, 12, 8, 1, 42)
+baseline {'init_s': 0.328131318, 'sweeps_s': 1.2516491, 'total_s': 1.736526486}
+blocks {'init_s': 0.296636925, 'sweeps_s': 0.828236489, 'total_s': 1.227900926}
+CASE ('majorana', 12, 12, 8, 1, 42)
+baseline {'init_s': 3.135969533, 'sweeps_s': 13.756928793, 'total_s': 18.581242161}
+blocks {'init_s': 2.703886832, 'sweeps_s': 8.581445354, 'total_s': 12.372386401}
+CASE ('honeycomb', 8, 12, 8, 1, 42)
+baseline {'init_s': 2.280221336, 'sweeps_s': 9.68191224, 'total_s': 13.14784073}
+blocks {'init_s': 1.93258293, 'sweeps_s': 5.9497241, 'total_s': 8.646827989}
+CASE ('majorana', 16, 12, 4, 1, 42)
+baseline {'init_s': 17.290228483, 'sweeps_s': 41.683372994, 'total_s': 69.471003372}
+blocks {'init_s': 14.851756638, 'sweeps_s': 27.460214348, 'total_s': 49.273835371}
+CASE ('square', 12, 12, 4, 1, 42)
+baseline {'init_s': 3.709481645, 'sweeps_s': 8.860714881, 'total_s': 14.784749582}
+blocks {'init_s': 3.226022469, 'sweeps_s': 5.770346817, 'total_s': 10.440816363}
+CASE ('chain0', 128, 12, 4, 1, 42)
+baseline {'init_s': 1.843825035, 'sweeps_s': 3.587344323, 'total_s': 6.305889082}
+blocks {'init_s': 1.660301436, 'sweeps_s': 2.308979587, 'total_s': 4.570360222}
+CASE ('chain1', 128, 12, 4, 1, 42)
+baseline {'init_s': 1.779433027, 'sweeps_s': 3.603131978, 'total_s': 6.315818715}
+blocks {'init_s': 1.587075258, 'sweeps_s': 2.365207352, 'total_s': 4.556222234}
+CASE ('majorana', 12, 12, 4, 4, 923)
+baseline {'init_s': 2.040190393, 'sweeps_s': 2.792438405, 'total_s': 5.617410846}
+blocks {'init_s': 1.830763371, 'sweeps_s': 2.038981953, 'total_s': 4.408030732}
+CASE ('majorana', 8, 40, 4, 1, 123)
+baseline {'init_s': 1.097368252, 'sweeps_s': 2.0622982, 'total_s': 3.689350887}
+blocks {'init_s': 0.932328094, 'sweeps_s': 1.422028469, 'total_s': 2.72098394}

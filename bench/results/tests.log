@@ -1,0 +1,41 @@
+Test project /home/han/PfQMC-perf/build/perf
+      Start  1: PfaffianTest.SimpleIntegerMatrix
+ 1/18 Test  #1: PfaffianTest.SimpleIntegerMatrix ..........................   Passed    0.01 sec
+      Start  2: PfaffianTest.RandomEntries
+ 2/18 Test  #2: PfaffianTest.RandomEntries ................................   Passed    0.29 sec
+      Start  3: PfaffianTest.MonteCarloWeight
+ 3/18 Test  #3: PfaffianTest.MonteCarloWeight .............................   Passed    0.04 sec
+      Start  4: HamiltonianGeneratorTest.honeycombKineticAndInteraction
+ 4/18 Test  #4: HamiltonianGeneratorTest.honeycombKineticAndInteraction ...   Passed    2.91 sec
+      Start  5: FastUpdateTest.GreenFunction
+ 5/18 Test  #5: FastUpdateTest.GreenFunction ..............................   Passed    0.93 sec
+      Start  6: FastUpdateTest.RatioSquare
+ 6/18 Test  #6: FastUpdateTest.RatioSquare ................................   Passed    0.88 sec
+      Start  7: QR_Factorization.UDT_Decomposition
+ 7/18 Test  #7: QR_Factorization.UDT_Decomposition ........................   Passed    1.24 sec
+      Start  8: QR_Factorization.BMult
+ 8/18 Test  #8: QR_Factorization.BMult ....................................   Passed    0.68 sec
+      Start  9: QR_Factorization.PivotScatterScaledColumns
+ 9/18 Test  #9: QR_Factorization.PivotScatterScaledColumns ................   Passed    0.02 sec
+      Start 10: PFQMC.GetSignTest
+10/18 Test #10: PFQMC.GetSignTest .........................................   Passed    6.82 sec
+      Start 11: PFQMC.udtRTest
+11/18 Test #11: PFQMC.udtRTest ............................................   Passed    0.31 sec
+      Start 12: SinhTest.SinhH
+12/18 Test #12: SinhTest.SinhH ............................................   Passed    0.02 sec
+      Start 13: SquareTest.Config
+13/18 Test #13: SquareTest.Config .........................................   Passed    1.62 sec
+      Start 14: SquareTest.SignTest
+14/18 Test #14: SquareTest.SignTest .......................................   Passed    0.08 sec
+      Start 15: InteractionBlocks.ModelsBoundariesAndChannels
+15/18 Test #15: InteractionBlocks.ModelsBoundariesAndChannels .............   Passed    0.07 sec
+      Start 16: InteractionBlocks.SignedSweepTrajectories
+16/18 Test #16: InteractionBlocks.SignedSweepTrajectories .................   Passed    1.04 sec
+      Start 17: InteractionBlocks.AcceptedNegativeWeightKeepsSign
+17/18 Test #17: InteractionBlocks.AcceptedNegativeWeightKeepsSign .........   Passed    0.01 sec
+      Start 18: SignFree.FourMode
+18/18 Test #18: SignFree.FourMode .........................................   Passed    0.22 sec
+
+100% tests passed out of 18
+
+Total Test time (real) =  17.21 sec

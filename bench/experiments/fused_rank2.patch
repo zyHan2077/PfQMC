@@ -1,0 +1,76 @@
+--- a/inc/spinless_tV.h
++++ b/inc/spinless_tV.h
+@@ -244,7 +244,6 @@
+         int auxCur = (*s)(idxAux);
+         int idx1, idx2, idx3, idx4;
+         DataType tmp[2];
+-        const int inc = 1;
+         DataType alpha;
+ 
+         config->aux2MajoranaIdx(idxAux, 0, bondType, idx1, idx2); // 1j, 1k
+@@ -310,11 +309,7 @@
+                     x1(idx1) += 2;
+                     x2(idx2) += 2;
+                     alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[imaj];
+-                    zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
+-                        g.data(), &nDim);
+-                    alpha = -alpha;
+-                    zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
+-                        g.data(), &nDim);
++                    skewRank2Update(g, x1, x2, alpha);
+                 }
+             } else if (hsScheme == 1) {
+                 int idxj1, idxk1, idxj2, idxk2;
+@@ -343,11 +338,7 @@
+                     x2(idx2) += 2;
+                     alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp[iaux];
+                     if (iaux == 1) alpha = -alpha;
+-                    zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
+-                        g.data(), &nDim);
+-                    alpha = -alpha;
+-                    zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
+-                        g.data(), &nDim);
++                    skewRank2Update(g, x1, x2, alpha);
+                 }
+             }
+         }
+@@ -360,7 +351,6 @@
+         int auxCur = (*s)(idxAux);
+         int idx1, idx2;
+         DataType tmp;
+-        const int inc = 1;
+         DataType alpha;
+ 
+         config->aux2MajoranaIdx(idxAux, 0, bondType, idx1, idx2);
+@@ -386,11 +376,7 @@
+             x1(idx1) += 2;
+             x2(idx2) += 2;
+             alpha = (+1.0i) * double(auxCur) * (config->thlV) / tmp;
+-            zgeru(&nDim, &nDim, &alpha, x1.data(), &inc, x2.data(), &inc,
+-                  g.data(), &nDim);
+-            alpha = -alpha;
+-            zgeru(&nDim, &nDim, &alpha, x2.data(), &inc, x1.data(), &inc,
+-                  g.data(), &nDim);
++            skewRank2Update(g, x1, x2, alpha);
+         }
+     };
+ 
+--- a/inc/skewMatUtils.h
++++ b/inc/skewMatUtils.h
+@@ -4,6 +4,16 @@
+ #include "types.h"
+ #include<iostream>
+ #include "../inc/pfapack/c_interface/pfapack.h"
++
++// Unconjugated antisymmetric rank-two update. Fuse the two matrix traversals;
++// x and y must be independent copies, not views into g.
++inline void skewRank2Update(MatType& g, const cVecType& x,
++                           const cVecType& y, DataType alpha) {
++    for (int j = 0; j < g.cols(); ++j) {
++        const DataType a = alpha * y(j), b = alpha * x(j);
++        g.col(j) += x*a - y*b;
++    }
++}
+ 
+ // x^\dagger . x
+ void complexNorm2(const DataType* x, MKL_INT len, DataType* res);

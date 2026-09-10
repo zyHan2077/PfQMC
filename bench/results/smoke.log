@@ -1,0 +1,8 @@
+filename = build/smoke/m/honeycomb-2-2-4-0.10-0.70-0-71876166.out
+Average MRsign = (1,2.0394e-14) AveCDW = (0.0406792,-4.75762e-19) AveCDWq = (0.0375368,1.2646e-19)
+filename = build/smoke/c0/chain-4-4-0.10-0.70-0.30-0-71876166-0.20-BC=1.out
+build/smoke/c0/chain-4-4-0.10-0.70-0.30-0-71876166-0.20-BC=1.out finished
+AveEnergy = (-0.897325,-1.04364e-16) sign = (1,1.6803e-14)
+filename = build/smoke/c1/chain-4-4-0.10-0.70-0.30-0-71876166-0.20-BC=1.out
+build/smoke/c1/chain-4-4-0.10-0.70-0.30-0-71876166-0.20-BC=1.out finished
+AveEnergy = (-0.739037,-9.99502e-17) sign = (1,3.22643e-14)

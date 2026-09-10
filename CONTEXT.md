@@ -180,3 +180,24 @@ broken committed CMake paths worked. CSV/log/checksum files in `sign_free_verify
 are ignored, exist locally, and are absent from a fresh clone. Reproduction commands
 can overwrite those sample CSVs; preserve them first if comparing historical data.
 Record fresh verification separately rather than silently changing historical results.
+
+
+## Performance worktree and repeatable timing (2026-09-10)
+
+- Independent worktree: `/home/han/PfQMC-perf`, branch `codex/pfqmc-performance`.
+  The original checkout's uncommitted environment/documentation repairs were
+  copied and recorded separately as `ec09e0c`; original files were not modified.
+- This worktree reuses Eigen and CMake from `/home/han/PfQMC/build/` using absolute
+  paths; its own generated artifacts are under `/home/han/PfQMC-perf/build/perf`.
+  Each build/test/run shell still activates `/opt/intel/oneapi/setvars.sh`.
+- [Benchmark workflow](bench/README.md) documents the `pfqmc_bench` target,
+  reference-build script, CSV schema and timing scope. The reference uses the
+  original kernels from `3832a1f` with the same current benchmark and build flags.
+- [Measured results](bench/RESULTS.md) include raw measurements for sites >100,
+  retained/rejected iterations, signed-phase checks, and regression results.
+  Sweep throughput is measured at fixed physical parameters, RNG seeds, thread
+  counts and stabilization schedule; numerical agreement is not a proof.
+- WSL reports an Intel Core i9-13900H and 20 logical CPUs. Final benchmarks run
+  one process at a time with MKL dynamic threading disabled and explicit 1 or 4
+  threads. Do not run builds/tests concurrently with timed comparisons.
+- `rg` is unavailable in this WSL installation; use `git grep` or `find`/`grep`.

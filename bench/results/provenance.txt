@@ -1,0 +1,23 @@
+Date: 2026-09-10
+Worktree: /home/han/PfQMC-perf
+CPU: Intel Core i9-13900H, WSL reports 20 logical CPUs
+Memory: WSL 15 GiB RAM, 4 GiB swap
+Compiler: mpiicpx / icpx 2025.3.2
+MKL: 2025.3.0, LP64, Intel threading
+Eigen: 3.4.0
+Flags: -fp-model=precise -fimf-arch-consistency=true -no-fma -O3
+Baseline kernels: 3832a1f8e9efb8cba24b52a58ddc843bfc4beb7f
+Optimized code: 49021fb06adf6895391963dd704680ff6742e381
+One process per run; MKL dynamic threading disabled; explicit 1 or 4 threads.
+
+SHA256:
+c358b9f697e65b86a6cfd1580f4194842b384e9993bc792bc19e53471475e228  inc/qr_udt.h
+f34d81b27a016736b7c2cc89615b69c16c857f6763db4cd67fc1494f4a11e530  inc/spinless_tV.h
+fabf1eea52301a819bf077345844d1b7bf014fa807be7bfb4163782d846afc9e  inc/skewMatUtils.h
+622d93a5ab744f8e692b1f23f7c2c3640aa65246a1dcba7220d2efafebf5ce74  src/pfqmc.cpp
+823b6bd77a12899907cf15af9f4a10799add03e40ccde74ec8b1681ced3f0946  src/skewMatUtils.cpp
+112fee91f0fefada6905041fb2732831c56fde30cb03cddb0bfbe64f97185e1e  bench/pfqmc_bench.cpp
+145fe804e131ef659abc2c5f48e011e72b86fd3604469968494279d5ac3a237f  build/perf/pfqmc_bench_baseline
+17ca13522bc2e1557183fced4105eec466f90ddd819f7aead421dc2de49eb4a5  build/perf/pfqmc_bench_blocks
+
+Verified: baseline header contents match the git reference; unchanged math source and benchmark harness match the optimized source byte for byte.
