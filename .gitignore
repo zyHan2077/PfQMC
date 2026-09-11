@@ -18,3 +18,40 @@ sign_free_verify/*.csv
 sign_free_verify/*.log
 sign_free_verify/*.sha256
 sign_free_verify/logs
+
+*.json
+*.sha256
+# Regenerable catalog samples and run logs. Keep compact CTest evidence,
+# summary JSON, checksum manifests, and independent research fixtures.
+/sign_free_catalog/results/*
+/sign_free_catalog/search_results/*
+
+# Local Python environments and caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Other compiler and CMake build products.
+*.obj
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.pdb
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/CTestTestfile.cmake
+/Testing/
+/compile_commands.json
+
+# Editor and desktop temporary files.
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

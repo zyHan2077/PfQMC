@@ -1,6 +1,6 @@
 # Repository context
 
-Last checked: 2026-09-10. Read this file when resuming work on PfQMC.
+Last checked: 2026-09-11. Read this file when resuming work on PfQMC.
 This describes the verified local machine, not a portable installation guarantee.
 
 ## Working rules and project map
@@ -20,8 +20,54 @@ This describes the verified local machine, not a portable installation guarantee
   **`SignFree.FourMode`**. Source directory and executable intentionally differ.
 - [Model and reproduction](sign_free_verify/README.md) and
   [historical results](sign_free_verify/REPORT.md) document the four-mode model.
-  Its source derivation is section 3.2 of the external notes under
-  `/home/han/notes/sign_free_classification/`; those notes are not bundled here.
+  Its source derivation is section 3.2 of the external notes now under
+  `/home/han/notes/sign_free/sign_free_classification/`; those notes are not bundled here.
+- `inc/catalog/`, `src/catalog_*.cpp`, `sign_free_catalog/`: parameterized
+  Hamiltonians from the audited sign-free notes, a dense continuous-HS walker
+  using existing `PfQMC` sweeps, and independent signed validation. CMake
+  library `pfqmc_catalog`, executable `sign_free_models`. See the
+  [catalog workflow](sign_free_catalog/README.md), [mathematical models](sign_free_catalog/MODELS.md)
+  and [recorded results](sign_free_catalog/RESULTS.md). Static sectors,
+  non-Hermitian generators and worldline projectors have separate APIs;
+  they must not be treated as ordinary Hermitian Gaussian-HS models.
+- Continuing sign-free search: `sign_free_catalog/MODELS.md` section 12,
+  `search_registry.json`, `SEARCH_RESULTS.md`, and `SEARCH_QUEUE.md` record
+  new constructions, deduplication, signed evidence and unvalidated leads.
+  CMake target `sign_free_search` uses `src/catalog_search.cpp`; the old
+  `sign_free_models` audit remains a separate historical validation suite.
+  Count only newly validated Hamiltonian constructions, not old catalog entries
+  or size/parameter variants. Stop expanding after the count exceeds 20, then
+  perform the final deduplication/merging and write complete per-family proofs.
+  Seven search rounds have 21 distinct validated constructions; the search
+  is complete after merging the Ising/XXZ faces; consult the registry
+  rather than this snapshot for the current count. Dedicated targets
+  `sign_free_projected` and `sign_free_dynamic_ising` validate sector-projected
+  and CT-INT configuration weights; they are not production Monte Carlo walkers.
+  `sign_free_poisson` validates local exponential CT vertices;
+  `sign_free_albert` runs the full Albert Jordan family with actual PfQMC sweeps.
+  `sign_free_mobile_spin` and `sign_free_quantum_link` validate dynamic
+  composite-pair and one-dimensional correlated-hopping CT paths.
+  `sign_free_meron`, `sign_free_ring_exchange`, `sign_free_color_projector`,
+  and `sign_free_frustrated_impurity` validate further CT decompositions.
+  Further signed CT targets: `sign_free_stabilizer`, `sign_free_jq`,
+  `sign_free_bilayer`, `sign_free_zigzag`, `sign_free_tj_chain`, `sign_free_fredkin`.
+  `sign_free_pxp` adds full-space kinetic-constraint validation.
+  Each round preserves its evidence separately; 84 CTest cases passed.
+  `summarize_search_all.py` aggregates seven rounds without mutating the registry
+  or historical evidence. MODELS.md has the final 21-family index and proofs.
+  Representation correction: the 21-family total is NOT an auxiliary-field PfQMC
+  count. Only R001-R005 and R009 (6 families) have confirmed ordinary Hermitian
+  Gaussian-HS weights and actual PfQMC sweeps; 15 remain unconfirmed in that
+  representation. R006 uses HS plus conserved-sector sums; R008 uses CT Gaussian
+  vertices; the others use worldlines/CT/SSE. Legacy sections 8-11 are separately
+  qualified (static backgrounds, non-Gaussian unitary mapping, worldlines, and
+  formal non-Hermitian Gaussian generators). See MODELS.md's status table and
+  each registry entry's auxiliary_field_pfqmc field. Historical evidence stays intact.
+  Catalog raw CSVs and per-run logs are local generated artifacts ignored by Git;
+  CTest logs, summary JSON, checksum manifests, registry, and small independent
+  research fixtures remain eligible for version control. A fresh clone needs
+  the raw samples regenerated or restored before running the summary scripts.
+  Historical checksum manifests describe the recorded runs, not later edits.
 
 ## Verified WSL2 and Intel oneAPI environment
 
@@ -201,3 +247,13 @@ Record fresh verification separately rather than silently changing historical re
   one process at a time with MKL dynamic threading disabled and explicit 1 or 4
   threads. Do not run builds/tests concurrently with timed comparisons.
 - `rg` is unavailable in this WSL installation; use `git grep` or `find`/`grep`.
+
+## Git line endings (2026-09-11)
+
+- WSL Git inherits `core.autocrlf=input` and `core.safecrlf=true` from
+  `/home/han/.gitconfig`. Keep repository text files saved with LF line endings.
+- Mixed CRLF/LF in `sign_free_catalog/research/dynamic_ising_screen.py`
+  blocked `git add` with `CRLF would be replaced by LF`; only its CRLF line
+  endings were normalized to LF. Keep the safety check enabled.
+- Verified `git add --all` using a temporary index; the real staging area and
+  commit history were left unchanged.

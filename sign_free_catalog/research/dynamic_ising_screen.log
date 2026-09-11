@@ -1,0 +1,9 @@
+two_site_density_spin fermion_pf= (1.9539092817363073e-05+0j) fock= (1.9539092817363337e-05+0j) spin_sum= 0.2502588258982379 joint_weight= (4.889830427589976e-06+0j) nonzero_spin_paths= 4 spin_pf_max_error= 1.7763568394002505e-15
+signed_rotation_negative_control= (-1.0000000000000018-0j)
+four_site_square fermion_pf= (1.1521847950714826e-05+0j) fock= (1.1521847950714622e-05+0j) spin_sum= 4.0351828255679045 joint_weight= (4.649276296952922e-05+0j) nonzero_spin_paths= 64 spin_pf_max_error= 1.7763568394002505e-15
+signed_rotation_negative_control= (-1.0000000000000018+0j)
+raw_density_negative_control= (-0.006196608084578887+0j) fock= (-0.0061966080845789195+0j) staggered_fermion= (0.006196608084578887+0j) spin_sum= 0.0
+full_fock_H_hermiticity= 0.0 rotation_error= 6.927648449883947e-17
+full_fock_word_trace= (4.88983042758992e-06+0j)
+single_combined_full_6mode_Pf= (1.2780410760785354e-06+0j) factorized_path= (1.2780410760785318e-06+0j)
+random_audit_seed=160507420 count=32 positive= 32 small_or_zero= 0 min_positive= 2.0140590305127656e-10 max_absolute_scaled_Pf_Fock_error= 1.6888395516980167e-15

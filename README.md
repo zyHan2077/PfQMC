@@ -39,6 +39,15 @@ Build target `sign_free_check`; its small regression is included in CTest.
 See the [validation report](<sign_free_verify/REPORT.md>) for recorded random samples
 and the original program's build and runtime results.
 
+## Additional sign-free Hamiltonians
+
+The [sign-free Hamiltonian catalog](sign_free_catalog/README.md) implements the
+remaining examples audited from the local sign-free notes: 27 Gaussian-HS
+presets integrated with `PfQMC`, static sectors, and separately identified
+worldline/non-Hermitian extensions. See the [physics formulas](sign_free_catalog/MODELS.md)
+and [signed numerical checks](sign_free_catalog/RESULTS.md). Build target:
+`sign_free_models`; the original program and four-mode validator remain available.
+
 ## Program Design
 
 ```mermaid
@@ -62,3 +71,11 @@ and the original program's build and runtime results.
 See [the reproducible performance workflow](bench/README.md) and
 [measured large-lattice results](bench/RESULTS.md) for the interaction-block
 optimization, regression checks, and baseline comparisons.
+
+
+The catalog records **21 distinct Hamiltonian constructions** after merging parameter variants.
+Only **6** have confirmed ordinary Gaussian-HS auxiliary-field PfQMC positivity; **15 remain
+unconfirmed in that representation**. The other positive weights use the explicitly labeled
+sector, CT, worldline, or SSE representations. See the [model index and per-family proofs](sign_free_catalog/MODELS.md#最终索引与统一计数),
+[signed numerical evidence](sign_free_catalog/SEARCH_RESULTS.md#最终汇总), and
+[Hamiltonian/configuration APIs](sign_free_catalog/README.md). The final suite passes 84 tests.
