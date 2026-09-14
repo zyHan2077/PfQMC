@@ -1,104 +1,93 @@
 name: build-and-test
 
 env:
-  LINUX_CPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
-  LINUX_FORTRAN_COMPONENTS: intel-oneapi-compiler-fortran
-  LINUX_MKL_COMPONENTS: "intel-oneapi-mkl intel-oneapi-mkl-devel"
-  LINUX_MPI_COMPONENTS: "intel-oneapi-mpi intel-oneapi-mpi-devel"
-# https://github.com/oneapi-src/oneapi-ci/blob/master/.github/workflows/build_all.yml
+  # Keep C++ and Fortran on the same release family as the verified WSL setup.
+  # The obsolete *-and-cpp-classic package selects 2023.2.4 and can hide ifx.
+  LINUX_CPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp-2025.3
+  LINUX_FORTRAN_COMPONENTS: intel-oneapi-compiler-fortran-2025.3
+  LINUX_MKL_COMPONENTS: intel-oneapi-mkl-devel-2025.3
+  LINUX_MPI_COMPONENTS: intel-oneapi-mpi-devel-2021.17
   CTEST_NO_TESTS_ACTION: error
 
 on:
   push:
     paths:
-      - "inc/**.h"
-      - "src/**.cpp"
+      - "inc/**"
+      - "src/**"
+      - "test/**"
+      - "main.cpp"
+      - "bench/**.cpp"
       - "sign_free_verify/**.cpp"
+      - "sign_free_catalog/**.cpp"
+      - "sign_free_catalog/**.h"
       - "CMakeLists.txt"
-      - ".github/workflows/main.yml"
+      - ".github/workflows/**"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  # free-disk-space:
-  #   runs-on: ubuntu-latest
-  #   steps:
-
-  #   - name: Free Disk Space (Ubuntu)
-  #     uses: jlumbroso/free-disk-space@main
-  #     with:
-  #       # this might remove tools that are actually needed,
-  #       # if set to "true" but frees about 6 GB
-  #       tool-cache: true
-        
-  #       # all of these default to true, but feel free to set to
-  #       # "false" if necessary for your workflow
-  #       android: true
-  #       dotnet: true
-  #       haskell: true
-  #       large-packages: true
-  #       docker-images: true
-  #       swap-storage: true
-
   build-and-test:
-    # needs: free-disk-space
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
 
     steps:
-    # must be first as we're using scripts from this repo
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: cache install oneAPI
-      id: cache-install
-      uses: actions/cache@v4
-      with:
-        path: |
-          /opt/intel/oneapi
-        key: install-apt
+      # Install through APT on every fresh runner. Caching only /opt/intel/oneapi
+      # omits system dependencies and the old constant key preserves mixed releases.
+      - name: Install build dependencies and oneAPI
+        timeout-minutes: 15
+        run: |
+          bash .github/workflows/oneapi_setup_apt_repo_linux.sh
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libeigen3-dev libgtest-dev \
+            "$LINUX_CPP_COMPONENTS" "$LINUX_FORTRAN_COMPONENTS" \
+            "$LINUX_MKL_COMPONENTS" "$LINUX_MPI_COMPONENTS"
 
-    - name: non-cache install oneAPI
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      timeout-minutes: 10
-      run: |
-        sh -c .github/workflows/oneapi_setup_apt_repo_linux.sh
-        sudo apt install ${{ env.LINUX_CPP_COMPONENTS }} ${{ env.LINUX_FORTRAN_COMPONENTS }} ${{ env.LINUX_MKL_COMPONENTS }} ${{ env.LINUX_MPI_COMPONENTS }}
-    - name: Setup Intel oneAPI environment
-      run: |
-        source /opt/intel/oneapi/setvars.sh
-        printenv >> $GITHUB_ENV
+      # Activate in each shell; do not copy all runner variables to GITHUB_ENV.
+      - name: Check Intel oneAPI environment
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          command -v icx icpx ifx mpiicpx
+          icpx --version
+          ifx --version
+          mpiicpx --version
+          printf 'MKLROOT=%s\n' "$MKLROOT"
+          test -f "$MKLROOT/lib/cmake/mkl/MKLConfig.cmake"
 
-    - name: cache Download Eigen3
-      id: cache-eigen3
-      uses: actions/cache@v4
-      with:
-        path: |
-          /opt/Eigen
-        key: download-eigen3
+      - name: Build PFAPACK
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          make -C inc/pfapack/fortran mFC=ifx
+          make -C inc/pfapack/c_interface
 
-    - name: Download EIGEN3
-      if: steps.cache-eigen3.outputs.cache-hit != 'true'
-      run: |
-        wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-        tar -xzf eigen-3.4.0.tar.gz
-        sudo mv eigen-3.4.0/Eigen /opt
-        rm -rf eigen-3.4.0*
-    
-    - name: install Gtest
-      run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+      - name: CMake Configure
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=mpiicpx \
+            -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3
 
-    - name: install pfapack
-      run: export PATH=/opt/intel/oneapi/compiler/2025.0/bin:$PATH && cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make && cd ../../..
-        
-    - name: CMake Configure 
-      run: cmake -B build -DEIGEN3_INCLUDE_DIR=/opt
-    
-    - name: CMAKE Build
-      run: cmake --build build --parallel
+      - name: CMake Build
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          cmake --build build --parallel 2
 
-    - name: Run test
-      timeout-minutes: 10
-      run: ctest --test-dir build -V
+      - name: Run tests
+        timeout-minutes: 10
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          ctest --test-dir build --output-on-failure --no-tests=error
 
-    - name: Setup tmate session
-      if: ${{ failure() }}
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 20
+      # Preserve diagnostics without an automatic 20-minute interactive session.
+      - name: Upload test logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctest-logs
+          path: build/Testing/Temporary/
+          if-no-files-found: ignore

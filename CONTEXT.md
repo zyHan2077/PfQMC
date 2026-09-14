@@ -257,3 +257,36 @@ Record fresh verification separately rather than silently changing historical re
   endings were normalized to LF. Keep the safety check enabled.
 - Verified `git add --all` using a temporary index; the real staging area and
   commit history were left unchanged.
+
+## Standalone fast-update evaluation (2026-09-11)
+
+- [evaluation/test_by_code.py](evaluation/test_by_code.py) is the self-contained
+  grader for the rollback task `PfQMC_with_bug_attemp1`. Deployment and scoring
+  are documented in [evaluation/README.md](evaluation/README.md).
+- In the evaluation image, run `cd /eval && python3 test_by_code.py`; the default
+  input is `/workspace/PfQMC_with_bug_attemp1` and output is
+  `/eval/code_result.json`. All C++ tests are embedded; no attachment is needed.
+- It activates oneAPI, compiles a fresh harness directly with `icpx` and
+  sequential MKL, and requires Eigen headers. It does not use rollout CMake,
+  tests, or cached executables. Local validation can select the documented Eigen
+  path with `EIGEN3_INCLUDE_DIR=/home/han/PfQMC/build/eigen`.
+- The six weighted groups test signed Fock-space ratios, Green updates,
+  Metropolis decisions, single-flip matrix consistency, complete updates, and
+  both sweep directions. These are functional numerical checks, not proofs of
+  asymptotic complexity or unrestricted numerical stability.
+- The grader now requires all four real/complex ratio categories, positive
+  nonunit real controls, both sides of the negative-real branch, and basis
+  relabelings. [evaluation/updateTest.cpp](evaluation/updateTest.cpp) provides
+  the corresponding GoogleTest replacement for the rollback repository's
+  `test/updateTest.cpp`; it is not a test of the current main repository API.
+
+## GitHub Actions toolchain repair (2026-09-14)
+
+- Run `34574273404` failed in PFAPACK with `make: ifx: No such file or directory`:
+  the Classic C++ package selected compiler 2023.2.4 while Fortran/MKL were 2026.1.
+- [CI](.github/workflows/main.yml) now uses Ubuntu 24.04 and modern C++/Fortran
+  packages from the 2025.3 family, MKL 2025.3 and MPI 2021.17. Patch releases
+  within these families may advance; the local versions above are unchanged.
+- CI installs dependencies through APT without restoring the old oneAPI cache,
+  activates oneAPI in each build/test shell, selects `mpiicpx` at configure time,
+  and uploads CTest logs instead of starting an automatic tmate session.
