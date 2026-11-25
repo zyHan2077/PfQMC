@@ -14,3 +14,4 @@ slurm-**.out
 **.pl
 **.sh
 doc/
+evaluation/

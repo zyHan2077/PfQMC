@@ -10,15 +10,22 @@ Check on our paper [arXiv:2408.10311](https://arxiv.org/abs/2408.10311) for a co
 
 The repo relies on the [PFAPACK](https://arxiv.org/abs/1102.3440) for Pfaffian-related calculations, included in `inc/pfapack`. [Eigen](https://eigen.tuxfamily.org/) library, along with the Intel® oneAPI Math Kernel Library ([oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)) is used for matrix operations.
 
-To build with CMAKE,
-```bash
-# build PFAPACK first with your favorite fortran compiler (ifx here)
-cd inc/pfapack/fortran && make mFC=ifx && cd ../c_interface && make
+For the verified local WSL2/oneAPI environment, exact dependency paths, build
+commands, and runtime examples, read [CONTEXT.md](CONTEXT.md).
 
-# run setvars.sh in the Intel oneAPI directory,
-# mkl dependencies should be automatically located
-mkdir build && cd build
-cmake .. -DEIGEN3_INCLUDE_DIR=/path/to/eigen3 & make
+To build with CMake, run the following from the repository root in Bash. Set
+`EIGEN3_INCLUDE_DIR` to the directory containing `Eigen/`; add
+`-DCMAKE_PREFIX_PATH=/path/to/prefix` if GoogleTest is installed outside the
+system paths.
+
+```bash
+source /opt/intel/oneapi/setvars.sh
+make -C inc/pfapack/fortran mFC=ifx
+make -C inc/pfapack/c_interface
+cmake -S . -B build -DCMAKE_CXX_COMPILER=mpiicpx \
+  -DEIGEN3_INCLUDE_DIR=/path/to/eigen3
+cmake --build build -j 2
+ctest --test-dir build --output-on-failure
 ```
 
 See `.github/workflows/main.yml` for a complete build and test workflow.
